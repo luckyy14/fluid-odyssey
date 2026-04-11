@@ -160,20 +160,17 @@ const PersonalizedView = ({ visitor, onReset }) => {
             ))}
           </div>
 
-          {/* DESKTOP: Bento grid sections — all open */}
-          <div className="hidden lg:grid lg:grid-cols-12 lg:gap-8 lg:items-start">
-            {content.sections.map((sec, i) => {
-              const span = getDesktopSpan(sec, i, content.sections.length);
-              return (
-                <motion.div key={sec.id} id={`sec-${sec.id}`}
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 + i * 0.08 }}
-                  className={`${span} rounded-2xl bg-[var(--surface-container-low)]/60 backdrop-blur-md p-6 lg:p-8 shadow-[0_20px_40px_var(--shadow-tint)] overflow-hidden`}>
-                  <h2 className="text-xs tracking-[0.3em] text-[var(--primary)]/50 uppercase font-bold mb-5">{sec.title}</h2>
-                  <ContentSection section={sec} />
-                </motion.div>
-              );
-            })}
+          {/* DESKTOP: Two-column flow — no overlap */}
+          <div className="hidden lg:grid lg:grid-cols-2 lg:gap-6">
+            {content.sections.map((sec, i) => (
+              <motion.div key={sec.id} id={`sec-${sec.id}`}
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + i * 0.08 }}
+                className="rounded-2xl bg-[var(--surface-container-low)]/60 backdrop-blur-md p-6 lg:p-8 shadow-[0_20px_40px_var(--shadow-tint)]">
+                <h2 className="text-xs tracking-[0.3em] text-[var(--primary)]/50 uppercase font-bold mb-5">{sec.title}</h2>
+                <ContentSection section={sec} />
+              </motion.div>
+            ))}
           </div>
 
           {/* Contact */}
@@ -210,25 +207,6 @@ const MobileNav = ({ onReset, llmStatus, progress }) => (
     </div>
   </nav>
 );
-
-/* Bento grid column spans based on section type */
-function getDesktopSpan(section, index, total) {
-  const patterns = [
-    ['col-span-7', 'col-span-5'],
-    ['col-span-5', 'col-span-7'],
-    ['col-span-8', 'col-span-4'],
-    ['col-span-4', 'col-span-8'],
-    ['col-span-12'],
-  ];
-
-  const pairIndex = Math.floor(index / 2);
-  const isLeft = index % 2 === 0;
-  const pattern = patterns[pairIndex % patterns.length];
-
-  if (index === total - 1 && total % 2 === 1) return 'col-span-12';
-
-  return isLeft ? pattern[0] : (pattern[1] || 'col-span-12');
-}
 
 const TypingDots = () => (
   <div className="flex items-center gap-2 px-1 py-2">
