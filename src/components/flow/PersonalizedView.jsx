@@ -64,7 +64,7 @@ const PersonalizedView = ({ visitor, onReset }) => {
       <MobileNav onReset={onReset} llmStatus={llm} progress={progress} />
 
       {/* Main — shifted right on desktop for side rail */}
-      <div className="lg:pl-20">
+      <div className="lg:pl-24">
         <div className="max-w-2xl mx-auto px-5 pt-24 lg:pt-10 pb-10 lg:max-w-5xl lg:px-12">
           {/* Header */}
           <motion.header initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="flex items-end justify-between mb-8 lg:mb-16">

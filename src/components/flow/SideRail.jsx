@@ -7,7 +7,7 @@ import ThemeToggle from '../ui/ThemeToggle';
 
 const SideRail = ({ sections, activeSection, onSectionClick, llmStatus, onReset }) => {
   return (
-    <aside className="fixed left-0 top-0 h-dvh w-20 hidden lg:flex flex-col items-center py-8 z-40 bg-[var(--surface-container-low)]/80 backdrop-blur-2xl shadow-[10px_0_30px_var(--shadow-tint)]">
+    <aside className="fixed left-0 top-0 h-screen w-24 hidden lg:flex flex-col items-center py-8 z-40 bg-[var(--surface-container-low)]/80 backdrop-blur-2xl shadow-[10px_0_30px_var(--shadow-tint)]">
       {/* Back to start */}
       <motion.button
         onClick={onReset}
