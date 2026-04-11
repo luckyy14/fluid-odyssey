@@ -10,7 +10,7 @@ const patterns = [
     ],
   },
   {
-    keywords: ['tech', 'stack', 'technology', 'technologies', 'use', 'tools'],
+    keywords: ['tech', 'stack', 'technology', 'technologies', 'tools', 'framework', 'language'],
     responses: [
       `My go-to stack is React.js with TypeScript. I work with Nx monorepos for enterprise-scale apps, and I've got experience with Next.js, React Native, Spring Boot, and NestJS. On the DevOps side, I handle CI/CD pipelines too.`,
       `I'm all about the modern web! React.js, TypeScript, Next.js are my daily drivers. I also work with Nx monorepos and micro-frontend architectures. Backend-wise, I've dabbled in Spring Boot and NestJS.`,
@@ -113,13 +113,32 @@ const fallbackResponses = [
 
 export const getResponse = (input) => {
   const lower = input.toLowerCase().trim();
+  const words = lower.split(/\s+/);
+
+  // Score each pattern by number of keyword matches (more = better fit)
+  let bestMatch = null;
+  let bestScore = 0;
 
   for (const pattern of patterns) {
-    const matched = pattern.keywords.some((keyword) => lower.includes(keyword));
-    if (matched) {
-      const randomIndex = Math.floor(Math.random() * pattern.responses.length);
-      return pattern.responses[randomIndex];
+    let score = 0;
+    for (const keyword of pattern.keywords) {
+      if (keyword.includes(' ')) {
+        // Multi-word keywords: substring match is fine
+        if (lower.includes(keyword)) score += 2;
+      } else {
+        // Single-word keywords: match whole words only
+        if (words.includes(keyword)) score += 1;
+      }
     }
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = pattern;
+    }
+  }
+
+  if (bestMatch) {
+    const randomIndex = Math.floor(Math.random() * bestMatch.responses.length);
+    return bestMatch.responses[randomIndex];
   }
 
   const randomIndex = Math.floor(Math.random() * fallbackResponses.length);

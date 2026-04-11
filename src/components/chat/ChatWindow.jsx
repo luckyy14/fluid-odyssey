@@ -4,9 +4,10 @@ import GlassCard from '../ui/GlassCard';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import useChat from '../../hooks/useChat';
+import { LLM_STATUS } from '../../lib/llmEngine';
 
 const ChatWindow = ({ suggestedQuestions = [] }) => {
-  const { messages, isTyping, sendMessage } = useChat();
+  const { messages, isTyping, sendMessage, llmStatus, loadProgress } = useChat();
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -25,12 +26,38 @@ const ChatWindow = ({ suggestedQuestions = [] }) => {
           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
             LB
           </div>
-          <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-[#0a0a0a]" />
+          <span
+            className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0a0a0a] ${
+              llmStatus === LLM_STATUS.READY
+                ? 'bg-green-400'
+                : llmStatus === LLM_STATUS.LOADING
+                  ? 'bg-yellow-400 animate-pulse'
+                  : 'bg-orange-400'
+            }`}
+          />
         </div>
-        <div>
+        <div className="flex-1 min-w-0">
           <h4 className="text-white font-semibold text-sm">AI Lakshay</h4>
-          <p className="text-green-400 text-xs">Online</p>
+          <p className="text-xs truncate">
+            {llmStatus === LLM_STATUS.READY && (
+              <span className="text-green-400">AI model active</span>
+            )}
+            {llmStatus === LLM_STATUS.LOADING && (
+              <span className="text-yellow-400">{loadProgress || 'Loading model...'}</span>
+            )}
+            {llmStatus === LLM_STATUS.ERROR && (
+              <span className="text-orange-400">Fallback mode</span>
+            )}
+            {llmStatus === LLM_STATUS.IDLE && (
+              <span className="text-gray-400">Initializing...</span>
+            )}
+          </p>
         </div>
+        {llmStatus === LLM_STATUS.READY && (
+          <span className="px-2 py-0.5 text-[10px] font-mono bg-green-500/10 text-green-400 border border-green-500/20 rounded-full">
+            WebGPU
+          </span>
+        )}
       </div>
 
       {/* Messages Area */}
@@ -73,7 +100,7 @@ const ChatWindow = ({ suggestedQuestions = [] }) => {
       </div>
 
       {/* Suggested Questions */}
-      {messages.length <= 1 && (
+      {messages.length <= 2 && (
         <div className="px-5 pb-3 flex flex-wrap gap-2">
           {suggestedQuestions.map((question) => (
             <button
