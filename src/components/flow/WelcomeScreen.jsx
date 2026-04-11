@@ -1,189 +1,236 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Briefcase, Code, Coffee, MessageCircle } from 'lucide-react';
+import { Briefcase, Code, Coffee, Compass, Pen } from 'lucide-react';
 import { profile } from '../../data/profile';
 import AnimatedText from '../ui/AnimatedText';
-import GlassCard from '../ui/GlassCard';
 
 const visitorTypes = [
   {
     id: 'recruiter',
-    label: 'Recruiter / Hiring Manager',
+    label: 'Hiring',
+    fullLabel: 'Recruiter / Hiring Manager',
+    emoji: '🔍',
     icon: Briefcase,
-    description: "I'm looking at potential candidates",
+    description: 'Scouting talent',
     color: 'from-blue-500 to-cyan-400',
+    shadow: 'shadow-blue-500/20',
   },
   {
     id: 'developer',
-    label: 'Fellow Developer',
+    label: 'Dev',
+    fullLabel: 'Fellow Developer',
+    emoji: '💻',
     icon: Code,
-    description: "I'm a dev checking out your work",
+    description: 'Checking your code',
     color: 'from-purple-500 to-pink-400',
+    shadow: 'shadow-purple-500/20',
   },
   {
     id: 'collaborator',
-    label: 'Potential Collaborator',
+    label: 'Collab',
+    fullLabel: 'Potential Collaborator',
+    emoji: '🤝',
     icon: Coffee,
-    description: 'Interested in working together',
+    description: 'Let\'s build together',
     color: 'from-amber-500 to-orange-400',
+    shadow: 'shadow-amber-500/20',
   },
   {
     id: 'curious',
-    label: 'Just Exploring',
-    icon: User,
-    description: 'Just curious about what you do',
-    color: 'from-green-500 to-emerald-400',
+    label: 'Explore',
+    fullLabel: 'Just Exploring',
+    emoji: '🧭',
+    icon: Compass,
+    description: 'Show me around',
+    color: 'from-emerald-500 to-teal-400',
+    shadow: 'shadow-emerald-500/20',
   },
 ];
 
 const WelcomeScreen = ({ onVisitorIdentified }) => {
-  const [step, setStep] = useState('intro'); // intro → choose → custom
+  const [showCustom, setShowCustom] = useState(false);
   const [customInput, setCustomInput] = useState('');
+  const [hoveredCard, setHoveredCard] = useState(null);
 
-  const handleSelect = (type) => {
-    onVisitorIdentified({
-      type: type.id,
-      label: type.label,
-      intro: type.description,
-    });
+  const handleSelect = (type, e) => {
+    onVisitorIdentified(
+      { type: type.id, label: type.fullLabel, intro: type.description },
+      e.nativeEvent,
+    );
   };
 
   const handleCustomSubmit = (e) => {
     e.preventDefault();
     if (!customInput.trim()) return;
-    onVisitorIdentified({
-      type: 'custom',
-      label: 'Custom',
-      intro: customInput.trim(),
-    });
+    onVisitorIdentified(
+      { type: 'custom', label: 'Custom', intro: customInput.trim() },
+      e.nativeEvent,
+    );
   };
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0, y: -40 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen flex items-center justify-center px-4 py-12 relative z-10"
+      exit={{ opacity: 0, scale: 0.98 }}
+      transition={{ duration: 0.4 }}
+      className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative z-10"
     >
-      <div className="max-w-2xl w-full text-center">
-        {/* Name + Intro */}
+      {/* Avatar / Identity */}
+      <motion.div
+        initial={{ scale: 0, rotate: -180 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.1 }}
+        className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center text-3xl font-bold text-white mb-6 shadow-lg shadow-purple-500/30"
+      >
+        {profile.firstName[0]}
+      </motion.div>
+
+      {/* Name */}
+      <motion.h1
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="text-4xl sm:text-6xl font-bold mb-2"
+      >
+        <span className="gradient-text">{profile.name}</span>
+      </motion.h1>
+
+      {/* Animated tagline */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="h-7 mb-8"
+      >
+        <AnimatedText
+          texts={[
+            profile.role + ' @ ' + profile.company,
+            profile.tagline,
+            '3.5+ years building for the web',
+          ]}
+          className="text-base sm:text-lg text-gray-500"
+        />
+      </motion.div>
+
+      {/* Question prompt */}
+      <motion.p
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.7 }}
+        className="text-gray-300 text-sm sm:text-base mb-8 font-light"
+      >
+        What brings you here today?
+      </motion.p>
+
+      {/* Visitor type cards */}
+      {!showCustom && (
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ delay: 0.8 }}
+          className="flex flex-wrap justify-center gap-3 mb-6 max-w-lg"
         >
-          <p className="text-sm font-mono text-purple-400 tracking-widest uppercase mb-4">
-            Welcome to my world
-          </p>
-          <h1 className="text-5xl sm:text-7xl font-bold mb-4">
-            <span className="text-white">Hey, I&apos;m </span>
-            <span className="gradient-text">{profile.firstName}</span>
-          </h1>
-          <div className="h-8 mb-6">
-            <AnimatedText
-              texts={[profile.role, `@ ${profile.company}`, profile.tagline]}
-              className="text-lg sm:text-xl text-gray-400"
-            />
-          </div>
-          <p className="text-gray-400 text-sm sm:text-base max-w-lg mx-auto leading-relaxed mb-10">
-            {profile.intro}
-          </p>
-        </motion.div>
-
-        {/* Step: Choose who you are */}
-        {step === 'intro' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-          >
-            <p className="text-white font-medium text-lg mb-6">
-              Tell me a bit about yourself so I can tailor this for you
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-              {visitorTypes.map((type, i) => (
-                <motion.div
-                  key={type.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 + i * 0.1 }}
-                >
-                  <GlassCard className="p-4 cursor-pointer text-left" hover>
-                    <button
-                      onClick={() => handleSelect(type)}
-                      className="w-full flex items-start gap-3 cursor-pointer"
-                    >
-                      <div
-                        className={`w-10 h-10 rounded-xl bg-gradient-to-br ${type.color} flex items-center justify-center shrink-0`}
-                      >
-                        <type.icon size={20} className="text-white" />
-                      </div>
-                      <div>
-                        <p className="text-white font-medium text-sm">{type.label}</p>
-                        <p className="text-gray-500 text-xs mt-0.5">{type.description}</p>
-                      </div>
-                    </button>
-                  </GlassCard>
-                </motion.div>
-              ))}
-            </div>
-
+          {visitorTypes.map((type, i) => (
             <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.1 }}
-              onClick={() => setStep('custom')}
-              className="text-sm text-gray-500 hover:text-purple-400 transition-colors cursor-pointer flex items-center gap-1.5 mx-auto"
+              key={type.id}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.9 + i * 0.08, type: 'spring', stiffness: 300 }}
+              whileHover={{ scale: 1.08, y: -4 }}
+              whileTap={{ scale: 0.95 }}
+              onMouseEnter={() => setHoveredCard(type.id)}
+              onMouseLeave={() => setHoveredCard(null)}
+              onClick={(e) => handleSelect(type, e)}
+              className={`
+                relative px-5 py-3 rounded-2xl cursor-pointer
+                bg-white/[0.03] border border-white/[0.08]
+                hover:border-white/20 hover:bg-white/[0.06]
+                transition-colors duration-300
+                group overflow-hidden
+                ${hoveredCard === type.id ? `shadow-xl ${type.shadow}` : ''}
+              `}
             >
-              <MessageCircle size={14} />
-              Or tell me in your own words
-            </motion.button>
-          </motion.div>
-        )}
+              {/* Gradient glow on hover */}
+              <div
+                className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${type.color} rounded-2xl blur-xl`}
+                style={{ transform: 'scale(0.8)', filter: 'blur(20px)', opacity: hoveredCard === type.id ? 0.12 : 0 }}
+              />
 
-        {/* Step: Custom text input */}
-        {step === 'custom' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <p className="text-white font-medium text-lg mb-4">
-              Tell me who you are and what you&apos;re looking for
-            </p>
-            <form onSubmit={handleCustomSubmit} className="max-w-md mx-auto">
-              <GlassCard className="p-1" hover={false}>
-                <textarea
-                  value={customInput}
-                  onChange={(e) => setCustomInput(e.target.value)}
-                  placeholder="e.g. I'm a startup founder looking for a React expert to join our team..."
-                  rows={3}
-                  className="w-full bg-transparent text-white placeholder-gray-600 px-4 py-3 text-sm focus:outline-none resize-none"
-                  autoFocus
-                />
-                <div className="flex justify-between items-center px-3 pb-2">
-                  <button
-                    type="button"
-                    onClick={() => setStep('intro')}
-                    className="text-xs text-gray-500 hover:text-gray-300 transition-colors cursor-pointer"
-                  >
-                    ← Back to options
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!customInput.trim()}
-                    className="px-4 py-1.5 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed hover:scale-105 transition-transform"
-                  >
-                    Let&apos;s go →
-                  </button>
+              <div className="relative flex items-center gap-2.5">
+                <span className="text-xl">{type.emoji}</span>
+                <div className="text-left">
+                  <p className="text-white text-sm font-medium">{type.label}</p>
+                  <p className="text-gray-600 text-[11px] leading-tight">{type.description}</p>
                 </div>
-              </GlassCard>
-            </form>
-          </motion.div>
-        )}
-      </div>
+              </div>
+            </motion.button>
+          ))}
+        </motion.div>
+      )}
+
+      {/* Custom input */}
+      {!showCustom && (
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.3 }}
+          onClick={() => setShowCustom(true)}
+          className="text-xs text-gray-600 hover:text-purple-400 transition-colors cursor-pointer flex items-center gap-1.5 group"
+        >
+          <Pen size={12} className="group-hover:rotate-12 transition-transform" />
+          something else entirely
+        </motion.button>
+      )}
+
+      {showCustom && (
+        <motion.form
+          initial={{ opacity: 0, y: 10, height: 0 }}
+          animate={{ opacity: 1, y: 0, height: 'auto' }}
+          transition={{ duration: 0.3 }}
+          onSubmit={handleCustomSubmit}
+          className="w-full max-w-sm"
+        >
+          <div className="relative rounded-2xl bg-white/[0.03] border border-white/[0.08] overflow-hidden focus-within:border-purple-500/40 transition-colors">
+            <textarea
+              value={customInput}
+              onChange={(e) => setCustomInput(e.target.value)}
+              placeholder="I'm a startup founder looking for..."
+              rows={2}
+              className="w-full bg-transparent text-white placeholder-gray-700 px-4 py-3 text-sm focus:outline-none resize-none"
+              autoFocus
+            />
+            <div className="flex justify-between items-center px-3 pb-2">
+              <button
+                type="button"
+                onClick={() => setShowCustom(false)}
+                className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors cursor-pointer"
+              >
+                ← pick a role
+              </button>
+              <motion.button
+                type="submit"
+                disabled={!customInput.trim()}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-4 py-1.5 text-xs font-medium rounded-xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
+              >
+                dive in →
+              </motion.button>
+            </div>
+          </div>
+        </motion.form>
+      )}
+
+      {/* Subtle hint at bottom */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.6 }}
+        className="absolute bottom-6 text-[11px] text-gray-700 font-mono"
+      >
+        this site adapts to you — powered by in-browser AI
+      </motion.p>
     </motion.div>
   );
 };
