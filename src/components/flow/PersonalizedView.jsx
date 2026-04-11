@@ -101,6 +101,47 @@ const PersonalizedView = ({ visitor, onReset }) => {
           </AnimatePresence>
           {busy && blocks.length === 0 && <TypingDots />}
 
+          {/* Topics + input — PRIMARY interaction */}
+          <div className="space-y-4">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[#707881] font-bold text-center lg:text-left">Ask me about</p>
+            <div className="flex flex-wrap justify-center lg:justify-start gap-2">
+              {content.topics.map((t) => (
+                <motion.button key={t.label} whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.96 }}
+                  onClick={() => ask(t.prompt, t.label)} disabled={busy}
+                  className="px-4 py-2 text-xs font-semibold rounded-full bg-white/70 shadow-[0_4px_12px_rgba(0,93,144,0.04)] text-[#005d90] hover:bg-[#ecf5fb] transition-colors cursor-pointer disabled:opacity-30 whitespace-nowrap">
+                  {t.label}
+                </motion.button>
+              ))}
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); if (!question.trim()) return; ask(question, question); setQuestion(''); }} className="flex items-center gap-2 max-w-lg lg:max-w-xl">
+              <input value={question} onChange={(e) => setQuestion(e.target.value)} disabled={busy}
+                placeholder="or type anything..."
+                className="flex-1 rounded-full bg-[#ecf5fb] px-5 py-3 text-sm text-[#141d21] placeholder-[#bfc7d1] focus:outline-none focus:ring-2 focus:ring-[#0077b6]/20 disabled:opacity-40" />
+              <motion.button type="submit" disabled={busy || !question.trim()} whileTap={{ scale: 0.9 }}
+                className="p-3 rounded-full bg-[#0077b6] text-white disabled:opacity-20 cursor-pointer hover:bg-[#005d90] transition-colors">
+                <Send size={15} />
+              </motion.button>
+            </form>
+          </div>
+
+          {/* AI blocks */}
+          <div ref={endRef}>
+            <AnimatePresence>
+              {blocks.filter((b) => b.id !== 'welcome').map((b) => (
+                <motion.div key={b.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} className="mb-3">
+                  <div className="rounded-3xl bg-white/80 backdrop-blur-md shadow-[0_8px_24px_rgba(0,93,144,0.05)] p-5 lg:p-8">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles size={12} className="text-[#0077b6]" />
+                      <span className="text-xs font-semibold text-[#005d90]">{b.title}</span>
+                    </div>
+                    <p className="text-sm lg:text-base text-[#404850] leading-relaxed whitespace-pre-line">{b.content}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+          {busy && blocks.length > 0 && <TypingDots />}
+
           {/* MOBILE: Accordion sections */}
           <div className="space-y-2 lg:hidden">
             {content.sections.map((sec, i) => (
@@ -137,46 +178,7 @@ const PersonalizedView = ({ visitor, onReset }) => {
             })}
           </div>
 
-          {/* AI blocks */}
-          <div ref={endRef} className="mt-6 lg:mt-10">
-            <AnimatePresence>
-              {blocks.filter((b) => b.id !== 'welcome').map((b) => (
-                <motion.div key={b.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} className="mb-3">
-                  <div className="rounded-3xl bg-white/80 backdrop-blur-md shadow-[0_8px_24px_rgba(0,93,144,0.05)] p-5 lg:p-8">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Sparkles size={12} className="text-[#0077b6]" />
-                      <span className="text-xs font-semibold text-[#005d90]">{b.title}</span>
-                    </div>
-                    <p className="text-sm lg:text-base text-[#404850] leading-relaxed whitespace-pre-line">{b.content}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-          {busy && blocks.length > 0 && <TypingDots />}
-
-          {/* Topics + input */}
-          <div className="mt-6 lg:mt-10 space-y-4">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-[#707881] font-bold text-center">Ask me about</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {content.topics.map((t) => (
-                <motion.button key={t.label} whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.96 }}
-                  onClick={() => ask(t.prompt, t.label)} disabled={busy}
-                  className="px-4 py-2 text-xs font-semibold rounded-full bg-white/70 shadow-[0_4px_12px_rgba(0,93,144,0.04)] text-[#005d90] hover:bg-[#ecf5fb] transition-colors cursor-pointer disabled:opacity-30 whitespace-nowrap">
-                  {t.label}
-                </motion.button>
-              ))}
-            </div>
-            <form onSubmit={(e) => { e.preventDefault(); if (!question.trim()) return; ask(question, question); setQuestion(''); }} className="flex items-center gap-2 max-w-lg mx-auto">
-              <input value={question} onChange={(e) => setQuestion(e.target.value)} disabled={busy}
-                placeholder="or type anything..."
-                className="flex-1 rounded-full bg-[#ecf5fb] px-5 py-3 text-sm text-[#141d21] placeholder-[#bfc7d1] focus:outline-none focus:ring-2 focus:ring-[#0077b6]/20 disabled:opacity-40" />
-              <motion.button type="submit" disabled={busy || !question.trim()} whileTap={{ scale: 0.9 }}
-                className="p-3 rounded-full bg-[#0077b6] text-white disabled:opacity-20 cursor-pointer hover:bg-[#005d90] transition-colors">
-                <Send size={15} />
-              </motion.button>
-            </form>
-          </div>
+          {/* (topics + AI blocks already rendered above sections) */}
 
           {/* Contact */}
           <div className="text-center pt-8 lg:pt-12">
