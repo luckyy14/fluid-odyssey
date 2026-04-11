@@ -71,19 +71,19 @@ const PersonalizedView = ({ visitor, onReset }) => {
           {/* Header */}
           <motion.header initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="flex items-end justify-between mb-8 lg:mb-16">
             <div className="flex items-center gap-4 lg:block">
-              <div className="w-12 h-12 rounded-full bg-[#0077b6] flex items-center justify-center text-[1.125rem] font-extrabold text-white shrink-0 shadow-[0_20px_40px_rgba(0,93,144,0.15)] lg:hidden">
+              <div className="w-12 h-12 rounded-full bg-[#0077b6] flex items-center justify-center text-lg font-extrabold text-white shrink-0 shadow-[0_20px_40px_rgba(0,93,144,0.15)] lg:hidden">
                 {profile.firstName[0]}
               </div>
               <div>
-                <h1 className="text-[1.286rem] sm:text-[1.5rem] lg:text-[3.429rem] font-extrabold text-[#94ccff] tracking-tight lg:leading-none lg:mb-4">{profile.name}</h1>
-                <p className="text-[0.75rem] lg:text-[1.125rem] text-[#8899aa] lg:max-w-md lg:leading-relaxed">{content.greeting}</p>
+                <h1 className="text-xl sm:text-2xl lg:text-5xl font-extrabold text-[#94ccff] tracking-tight lg:leading-none lg:mb-4">{profile.name}</h1>
+                <p className="text-xs lg:text-lg text-[#8899aa] lg:max-w-md lg:leading-relaxed">{content.greeting}</p>
               </div>
             </div>
             {/* Desktop badges */}
             <div className="hidden lg:flex gap-3">
-              <span className="px-5 py-2 rounded-full bg-[#004f59] text-[#9feffe] text-[0.714rem] font-bold tracking-widest uppercase">{visitor.label}</span>
+              <span className="px-5 py-2 rounded-full bg-[#004f59] text-[#9feffe] text-xs font-bold tracking-widest uppercase">{visitor.label}</span>
               {llm === LLM_STATUS.READY && (
-                <span className="px-5 py-2 rounded-full bg-[#112240] text-[#83d3e1] text-[0.714rem] font-bold tracking-widest uppercase flex items-center gap-1.5">
+                <span className="px-5 py-2 rounded-full bg-[#112240] text-[#83d3e1] text-xs font-bold tracking-widest uppercase flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#83d3e1] animate-pulse" /> AI Active
                 </span>
               )}
@@ -95,7 +95,7 @@ const PersonalizedView = ({ visitor, onReset }) => {
             {blocks.filter((b) => b.id === 'welcome').map((b) => (
               <motion.div key={b.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 className="rounded-[3rem] rounded-tl-lg bg-[#112240] px-5 py-4 mb-6 lg:px-8 lg:py-6 lg:mb-10 lg:max-w-2xl">
-                <p className="text-[0.875rem] lg:text-[1rem] text-[#e0e8f0] leading-relaxed">{b.content}</p>
+                <p className="text-sm lg:text-base text-[#e0e8f0] leading-relaxed">{b.content}</p>
               </motion.div>
             ))}
           </AnimatePresence>
@@ -103,12 +103,12 @@ const PersonalizedView = ({ visitor, onReset }) => {
 
           {/* Topics + input — PRIMARY interaction */}
           <div className="space-y-4">
-            <p className="text-[0.714rem] uppercase tracking-[0.2em] text-[#8899aa] font-bold text-center lg:text-left">Ask me about</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#8899aa] font-bold text-center lg:text-left">Ask me about</p>
             <div className="flex flex-wrap justify-center lg:justify-start gap-2">
               {content.topics.map((t) => (
                 <motion.button key={t.label} whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.96 }}
                   onClick={() => ask(t.prompt, t.label)} disabled={busy}
-                  className="px-4 py-2 text-[0.75rem] font-semibold rounded-full bg-[#112240]/70 shadow-[0_20px_40px_rgba(0,93,144,0.15)] text-[#94ccff] hover:bg-[#152a4a] transition-colors cursor-pointer disabled:opacity-30 whitespace-nowrap">
+                  className="px-4 py-2 text-xs font-semibold rounded-full bg-[#112240]/70 shadow-[0_20px_40px_rgba(0,93,144,0.15)] text-[#94ccff] hover:bg-[#152a4a] transition-colors cursor-pointer disabled:opacity-30 whitespace-nowrap">
                   {t.label}
                 </motion.button>
               ))}
@@ -116,7 +116,7 @@ const PersonalizedView = ({ visitor, onReset }) => {
             <form onSubmit={(e) => { e.preventDefault(); if (!question.trim()) return; ask(question, question); setQuestion(''); }} className="flex items-center gap-2 max-w-lg lg:max-w-xl">
               <input value={question} onChange={(e) => setQuestion(e.target.value)} disabled={busy}
                 placeholder="or type anything..."
-                className="flex-1 rounded-full bg-[#112240] px-5 py-3 text-[0.875rem] text-[#e0e8f0] placeholder-[#3d5060] focus:outline-none focus:ring-2 focus:ring-[#94ccff]/20 disabled:opacity-40" />
+                className="flex-1 rounded-full bg-[#112240] px-5 py-3 text-sm text-[#e0e8f0] placeholder-[#3d5060] focus:outline-none focus:ring-2 focus:ring-[#94ccff]/20 disabled:opacity-40" />
               <motion.button type="submit" disabled={busy || !question.trim()} whileTap={{ scale: 0.9 }}
                 className="p-3 rounded-full bg-[#0077b6] text-white disabled:opacity-20 cursor-pointer hover:bg-[#005c70] transition-colors">
                 <Send size={15} />
@@ -132,9 +132,9 @@ const PersonalizedView = ({ visitor, onReset }) => {
                   <div className="rounded-[3rem] bg-[#112240]/80 backdrop-blur-md shadow-[0_20px_40px_rgba(0,93,144,0.15)] p-5 lg:p-8">
                     <div className="flex items-center gap-2 mb-2">
                       <Sparkles size={12} className="text-[#94ccff]" />
-                      <span className="text-[0.75rem] font-semibold text-[#94ccff]">{b.title}</span>
+                      <span className="text-xs font-semibold text-[#94ccff]">{b.title}</span>
                     </div>
-                    <p className="text-[0.875rem] lg:text-[1rem] text-[#8899aa] leading-relaxed whitespace-pre-line">{b.content}</p>
+                    <p className="text-sm lg:text-base text-[#8899aa] leading-relaxed whitespace-pre-line">{b.content}</p>
                   </div>
                 </motion.div>
               ))}
@@ -148,7 +148,7 @@ const PersonalizedView = ({ visitor, onReset }) => {
               <motion.div key={sec.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + i * 0.06 }}>
                 <button onClick={() => toggle(sec.id)}
                   className="w-full flex items-center justify-between px-5 py-3.5 rounded-[3rem] bg-[#112240] hover:bg-[#152a4a] transition-colors cursor-pointer">
-                  <span className="text-[0.875rem] font-semibold text-[#94ccff]">{sec.title}</span>
+                  <span className="text-sm font-semibold text-[#94ccff]">{sec.title}</span>
                   <motion.span animate={{ rotate: open.has(sec.id) ? 90 : 0 }} className="text-[#3d5060]"><ChevronRight size={16} /></motion.span>
                 </button>
                 <AnimatePresence>
@@ -171,7 +171,7 @@ const PersonalizedView = ({ visitor, onReset }) => {
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + i * 0.08 }}
                   className={`${span} rounded-[3rem] bg-[#112240]/60 backdrop-blur-md p-8 shadow-[0_20px_40px_rgba(0,93,144,0.15)]`}>
-                  <h2 className="text-[0.75rem] tracking-[0.3em] text-[#94ccff]/50 uppercase font-bold mb-5">{sec.title}</h2>
+                  <h2 className="text-xs tracking-[0.3em] text-[#94ccff]/50 uppercase font-bold mb-5">{sec.title}</h2>
                   <ContentSection section={sec} />
                 </motion.div>
               );
@@ -180,10 +180,10 @@ const PersonalizedView = ({ visitor, onReset }) => {
 
           {/* Contact */}
           <div className="text-center pt-8 lg:pt-12">
-            <p className="text-[0.75rem] text-[#8899aa] mb-3">Want to talk for real?</p>
+            <p className="text-xs text-[#8899aa] mb-3">Want to talk for real?</p>
             <div className="flex justify-center gap-3">
-              <a href={`mailto:${profile.email}`} className="px-5 py-2.5 text-[0.75rem] font-bold rounded-full bg-[#0077b6] text-white hover:bg-[#005c70] transition-colors">Email me</a>
-              <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="px-5 py-2.5 text-[0.75rem] font-bold rounded-full bg-[#112240] text-[#94ccff] hover:bg-[#152a4a] transition-colors">LinkedIn</a>
+              <a href={`mailto:${profile.email}`} className="px-5 py-2.5 text-xs font-bold rounded-full bg-[#0077b6] text-white hover:bg-[#005c70] transition-colors">Email me</a>
+              <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="px-5 py-2.5 text-xs font-bold rounded-full bg-[#112240] text-[#94ccff] hover:bg-[#152a4a] transition-colors">LinkedIn</a>
             </div>
           </div>
           <div className="h-8" />
@@ -196,13 +196,13 @@ const PersonalizedView = ({ visitor, onReset }) => {
 /* Mobile top nav — hidden on lg */
 const MobileNav = ({ onReset, llmStatus, progress }) => (
   <nav className="fixed top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-2xl rounded-full bg-[#0d1b2a]/80 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,93,144,0.15)] flex items-center justify-between px-4 sm:px-6 py-2.5 z-50 lg:hidden">
-    <button onClick={onReset} className="flex items-center gap-1 text-[0.75rem] text-[#8899aa] hover:text-[#94ccff] cursor-pointer group transition-colors">
+    <button onClick={onReset} className="flex items-center gap-1 text-xs text-[#8899aa] hover:text-[#94ccff] cursor-pointer group transition-colors">
       <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" /> back
     </button>
     <div className="flex items-center gap-3">
       {llmStatus === LLM_STATUS.LOADING && <Loader2 size={12} className="animate-spin text-[#94ccff]" />}
       {llmStatus === LLM_STATUS.LOADING && progress && <span className="text-[0.643rem] text-[#94ccff]/50 font-mono truncate max-w-[100px]">{progress}</span>}
-      {llmStatus === LLM_STATUS.READY && <span className="flex items-center gap-1 text-[0.714rem] text-[#83d3e1] font-bold"><span className="w-1.5 h-1.5 rounded-full bg-[#83d3e1] animate-pulse" />AI</span>}
+      {llmStatus === LLM_STATUS.READY && <span className="flex items-center gap-1 text-xs text-[#83d3e1] font-bold"><span className="w-1.5 h-1.5 rounded-full bg-[#83d3e1] animate-pulse" />AI</span>}
       <div className="flex items-center gap-2.5 pl-2.5 border-l border-[#2a3a4a]/15">
         <a href={`mailto:${profile.email}`} className="text-[#3d5060] hover:text-[#94ccff] transition-colors"><FaEnvelope size={13} /></a>
         <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="text-[#3d5060] hover:text-[#94ccff] transition-colors"><FaLinkedin size={13} /></a>
@@ -215,16 +215,16 @@ const MobileNav = ({ onReset, llmStatus, progress }) => (
 /* Desktop top bar — hidden on mobile */
 const DesktopTopBar = ({ onReset, llmStatus, progress }) => (
   <nav className="hidden lg:flex fixed top-0 left-20 right-0 z-50 justify-between items-center px-12 py-6 bg-[#0d1b2a]/80 backdrop-blur-xl">
-    <button onClick={onReset} className="text-[0.875rem] text-[#8899aa] hover:text-[#94ccff] cursor-pointer transition-colors flex items-center gap-2 group">
+    <button onClick={onReset} className="text-sm text-[#8899aa] hover:text-[#94ccff] cursor-pointer transition-colors flex items-center gap-2 group">
       <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Start over
     </button>
     <div className="flex items-center gap-6">
       {llmStatus === LLM_STATUS.LOADING && (
-        <span className="flex items-center gap-2 text-[0.75rem] text-[#94ccff]/60 font-mono">
+        <span className="flex items-center gap-2 text-xs text-[#94ccff]/60 font-mono">
           <Loader2 size={12} className="animate-spin" /> {progress || 'Loading model...'}
         </span>
       )}
-      <a href={`mailto:${profile.email}`} className="px-6 py-2 rounded-full bg-[#0077b6] text-white text-[0.75rem] font-bold tracking-widest uppercase hover:bg-[#005c70] transition-colors">Contact</a>
+      <a href={`mailto:${profile.email}`} className="px-6 py-2 rounded-full bg-[#0077b6] text-white text-xs font-bold tracking-widest uppercase hover:bg-[#005c70] transition-colors">Contact</a>
     </div>
   </nav>
 );
@@ -256,7 +256,7 @@ const TypingDots = () => (
           animate={{ y: [0, -4, 0] }} transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.12 }} />
       ))}
     </div>
-    <span className="text-[0.786rem] text-[#8899aa]">thinking...</span>
+    <span className="text-xs text-[#8899aa]">thinking...</span>
   </div>
 );
 
