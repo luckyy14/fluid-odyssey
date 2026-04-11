@@ -4,8 +4,10 @@ import WelcomeScreen from './components/flow/WelcomeScreen';
 import PersonalizedView from './components/flow/PersonalizedView';
 import FluidBackground from './components/ui/FluidBackground';
 import RippleTransition from './components/ui/RippleTransition';
+import { ThemeContext, useThemeProvider } from './hooks/useTheme';
 
 function App() {
+  const themeCtx = useThemeProvider();
   const [visitor, setVisitor] = useState(null);
   const [ripple, setRipple] = useState(null);
   const [transitioning, setTransitioning] = useState(false);
@@ -32,20 +34,22 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-dvh relative overflow-hidden bg-[#0d1b2a]">
-      <FluidBackground variant="dark" />
-      <AnimatePresence mode="wait">
-        {ripple && <RippleTransition key="ripple" origin={ripple} />}
-      </AnimatePresence>
-      <AnimatePresence mode="wait">
-        {!visitor && !transitioning && (
-          <WelcomeScreen key="welcome" onVisitorIdentified={handleVisitorIdentified} />
-        )}
-        {visitor && !transitioning && (
-          <PersonalizedView key="personal" visitor={visitor} onReset={handleReset} />
-        )}
-      </AnimatePresence>
-    </div>
+    <ThemeContext.Provider value={themeCtx}>
+      <div className="min-h-dvh relative overflow-hidden bg-[var(--surface)] theme-transition">
+        <FluidBackground />
+        <AnimatePresence mode="wait">
+          {ripple && <RippleTransition key="ripple" origin={ripple} />}
+        </AnimatePresence>
+        <AnimatePresence mode="wait">
+          {!visitor && !transitioning && (
+            <WelcomeScreen key="welcome" onVisitorIdentified={handleVisitorIdentified} />
+          )}
+          {visitor && !transitioning && (
+            <PersonalizedView key="personal" visitor={visitor} onReset={handleReset} />
+          )}
+        </AnimatePresence>
+      </div>
+    </ThemeContext.Provider>
   );
 }
 

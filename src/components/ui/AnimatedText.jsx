@@ -61,7 +61,7 @@ const AnimatedText = ({
       <motion.span
         animate={{ opacity: [1, 0] }}
         transition={{ duration: 0.5, repeat: Infinity, repeatType: 'reverse' }}
-        className="inline-block w-[2px] h-[1em] bg-[#0077b6] ml-1 align-middle"
+        className="inline-block w-[2px] h-[1em] bg-[var(--primary-container)] ml-1 align-middle"
       />
     </span>
   );
