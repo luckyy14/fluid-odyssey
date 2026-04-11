@@ -1,71 +1,34 @@
 import { motion } from 'framer-motion';
 import { ExternalLink } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
-import GlassCard from '../ui/GlassCard';
 
-const ContentSection = ({ section }) => {
-  return (
-    <div>
-      {section.title && (
-        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <span className="w-1.5 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full" />
-          {section.title}
-        </h2>
-      )}
-
-      {section.type === 'text' && <TextBlock content={section.content} />}
-      {section.type === 'skills' && <SkillsGrid skills={section.content} />}
-      {section.type === 'projects' && <ProjectCards projects={section.content} />}
-      {section.type === 'timeline' && <Timeline experience={section.content} />}
-      {section.type === 'stats' && <StatsGrid stats={section.content} />}
-    </div>
-  );
-};
+const ContentSection = ({ section }) => (
+  <div className="space-y-3">
+    {section.type === 'text' && <TextBlock content={section.content} />}
+    {section.type === 'skills' && <SkillsGrid skills={section.content} />}
+    {section.type === 'projects' && <ProjectCards projects={section.content} />}
+    {section.type === 'timeline' && <Timeline experience={section.content} />}
+    {section.type === 'stats' && <StatsGrid stats={section.content} />}
+  </div>
+);
 
 const TextBlock = ({ content }) => (
-  <GlassCard className="p-5" hover={false}>
-    <p className="text-gray-300 text-sm leading-relaxed">{content}</p>
-  </GlassCard>
+  <p className="text-[#404850] text-sm leading-relaxed">{content}</p>
 );
 
 const SkillsGrid = ({ skills }) => {
-  const categories = [...new Set(skills.map((s) => s.category))];
-  const colorMap = {
-    frontend: 'from-blue-500 to-cyan-400',
-    backend: 'from-green-500 to-emerald-400',
-    language: 'from-purple-500 to-pink-400',
-    mobile: 'from-orange-500 to-amber-400',
-    tools: 'from-cyan-500 to-blue-400',
-    devops: 'from-indigo-500 to-violet-400',
-    web: 'from-teal-500 to-green-400',
-    security: 'from-red-500 to-orange-400',
-  };
-
+  const cats = [...new Set(skills.map((s) => s.category))];
   return (
     <div className="space-y-4">
-      {categories.map((cat) => (
+      {cats.map((cat) => (
         <div key={cat}>
-          <p className="text-xs uppercase tracking-wider text-gray-500 font-mono mb-2">{cat}</p>
+          <p className="text-[10px] uppercase tracking-widest text-[#707881] font-bold mb-2">{cat}</p>
           <div className="flex flex-wrap gap-2">
-            {skills
-              .filter((s) => s.category === cat)
-              .map((skill) => (
-                <div key={skill.name} className="group relative">
-                  <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm text-gray-300 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all cursor-default">
-                    {skill.name}
-                    <span className="ml-1.5 text-xs text-gray-600">{skill.level}%</span>
-                  </div>
-                  {/* Skill bar */}
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity">
-                    <motion.div
-                      className={`h-full bg-gradient-to-r ${colorMap[cat] || 'from-purple-500 to-pink-400'}`}
-                      initial={{ width: 0 }}
-                      whileInView={{ width: `${skill.level}%` }}
-                      transition={{ duration: 0.5 }}
-                    />
-                  </div>
-                </div>
-              ))}
+            {skills.filter((s) => s.category === cat).map((s) => (
+              <span key={s.name} className="px-3 py-1.5 rounded-full bg-[#ecf5fb] text-[#005d90] text-xs font-medium">
+                {s.name}
+              </span>
+            ))}
           </div>
         </div>
       ))}
@@ -75,87 +38,37 @@ const SkillsGrid = ({ skills }) => {
 
 const ProjectCards = ({ projects }) => (
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-    {projects.map((project, i) => {
-      const accentColors = [
-        'rgba(59, 130, 246, 0.15)',
-        'rgba(139, 92, 246, 0.15)',
-        'rgba(236, 72, 153, 0.15)',
-        'rgba(16, 185, 129, 0.15)',
-      ];
-      return (
-        <GlassCard key={project.name} className="p-4" glowColor={accentColors[i % 4]}>
-          <h3 className="text-white font-semibold text-sm mb-1">{project.name}</h3>
-          <p className="text-gray-400 text-xs mb-3 line-clamp-2">{project.description}</p>
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {project.tech.map((t) => (
-              <span
-                key={t}
-                className="px-2 py-0.5 text-[10px] rounded-full bg-white/5 border border-white/10 text-gray-500"
-              >
-                {t}
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-3">
-            {project.github && (
-              <a
-                href={project.github}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-gray-500 hover:text-white transition-colors flex items-center gap-1"
-              >
-                <FaGithub size={12} /> Code
-              </a>
-            )}
-            {project.live && (
-              <a
-                href={project.live}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-gray-500 hover:text-white transition-colors flex items-center gap-1"
-              >
-                <ExternalLink size={12} /> Live
-              </a>
-            )}
-          </div>
-        </GlassCard>
-      );
-    })}
+    {projects.map((p) => (
+      <div key={p.name} className="p-4 rounded-2xl bg-white/80 shadow-[0_8px_24px_rgba(0,93,144,0.04)]">
+        <h4 className="text-sm font-bold text-[#005d90] mb-1">{p.name}</h4>
+        <p className="text-xs text-[#404850] mb-3 line-clamp-2">{p.description}</p>
+        <div className="flex flex-wrap gap-1 mb-3">
+          {p.tech.map((t) => (
+            <span key={t} className="px-2 py-0.5 text-[10px] rounded-full bg-[#227c8a]/10 text-[#00626f] font-medium">{t}</span>
+          ))}
+        </div>
+        <div className="flex gap-3">
+          {p.github && <a href={p.github} target="_blank" rel="noopener noreferrer" className="text-xs text-[#707881] hover:text-[#005d90] flex items-center gap-1 transition-colors"><FaGithub size={11} /> Code</a>}
+          {p.live && <a href={p.live} target="_blank" rel="noopener noreferrer" className="text-xs text-[#707881] hover:text-[#005d90] flex items-center gap-1 transition-colors"><ExternalLink size={11} /> Live</a>}
+        </div>
+      </div>
+    ))}
   </div>
 );
 
 const Timeline = ({ experience }) => (
-  <div className="space-y-4 relative">
-    {/* Vertical line */}
-    <div className="absolute left-[11px] top-2 bottom-2 w-px bg-gradient-to-b from-blue-500/50 via-purple-500/50 to-transparent" />
-
+  <div className="space-y-3">
     {experience.map((exp) => (
-      <div key={exp.company} className="relative pl-8">
-        {/* Dot */}
-        <div
-          className={`absolute left-0 top-1.5 w-[23px] h-[23px] rounded-full border-2 flex items-center justify-center ${
-            exp.roles[0]?.current
-              ? 'border-green-400 bg-green-400/20'
-              : 'border-purple-500/50 bg-purple-500/10'
-          }`}
-        >
-          {exp.roles[0]?.current && (
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          )}
-        </div>
-
-        <GlassCard className="p-4" hover={false}>
-          <h3 className="text-white font-semibold text-sm">{exp.company}</h3>
-          <div className="mt-2 space-y-1">
-            {exp.roles.map((role) => (
-              <div key={role.title} className="flex items-center justify-between">
-                <span className="text-gray-400 text-xs">{role.title}</span>
-                <span className="text-gray-600 text-[11px] font-mono">{role.period}</span>
-              </div>
-            ))}
+      <div key={exp.company} className="relative pl-5">
+        <div className={`absolute left-0 top-2 w-2.5 h-2.5 rounded-full ${exp.roles[0]?.current ? 'bg-[#00626f] ring-4 ring-[#00626f]/15' : 'bg-[#0077b6] ring-4 ring-[#0077b6]/10'}`} />
+        <h4 className="text-sm font-bold text-[#005d90]">{exp.company}</h4>
+        {exp.roles.map((r) => (
+          <div key={r.title} className="flex items-baseline justify-between mt-0.5">
+            <span className="text-xs text-[#404850]">{r.title}</span>
+            <span className="text-[10px] text-[#707881] ml-2 shrink-0">{r.period}</span>
           </div>
-          <p className="text-gray-500 text-xs mt-2">{exp.description}</p>
-        </GlassCard>
+        ))}
+        <p className="text-[11px] text-[#707881] mt-1">{exp.description}</p>
       </div>
     ))}
   </div>
@@ -163,11 +76,11 @@ const Timeline = ({ experience }) => (
 
 const StatsGrid = ({ stats }) => (
   <div className="grid grid-cols-2 gap-3">
-    {stats.map((stat) => (
-      <GlassCard key={stat.label} className="p-4 text-center" hover>
-        <p className="text-2xl font-bold gradient-text">{stat.value}</p>
-        <p className="text-xs text-gray-500 mt-1">{stat.label}</p>
-      </GlassCard>
+    {stats.map((s) => (
+      <div key={s.label} className="p-4 rounded-2xl bg-white/80 text-center shadow-[0_4px_16px_rgba(0,93,144,0.04)]">
+        <p className="text-2xl font-extrabold text-[#005d90]">{s.value}</p>
+        <p className="text-[10px] text-[#707881] mt-1 uppercase tracking-wider">{s.label}</p>
+      </div>
     ))}
   </div>
 );
