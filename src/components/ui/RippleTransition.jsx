@@ -20,7 +20,7 @@ const RippleTransition = ({ origin }) => {
             cy={py}
             r={0}
             fill="none"
-            stroke="rgba(0, 119, 182, 0.2)"
+            stroke="rgba(148, 204, 255, 0.2)"
             strokeWidth={1.5}
             initial={{ r: 0, opacity: 0.6 }}
             animate={{ r: Math.max(window.innerWidth, window.innerHeight), opacity: 0 }}
@@ -32,7 +32,7 @@ const RippleTransition = ({ origin }) => {
         className="absolute rounded-full"
         style={{
           left: px, top: py, transform: 'translate(-50%, -50%)',
-          background: 'radial-gradient(circle, rgba(0,119,182,0.1) 0%, rgba(80,217,254,0.05) 40%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(0,119,182,0.1) 0%, rgba(0,92,112,0.05) 40%, transparent 70%)',
         }}
         initial={{ width: 0, height: 0, opacity: 0.6 }}
         animate={{ width: '300vmax', height: '300vmax', opacity: 0 }}
