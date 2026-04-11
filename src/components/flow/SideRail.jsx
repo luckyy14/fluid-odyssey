@@ -38,7 +38,7 @@ const SideRail = ({ sections, activeSection, onSectionClick, llmStatus, onReset 
             >
               <span className={`w-1.5 h-1.5 rounded-full transition-all ${isActive ? 'bg-[var(--primary)] scale-150' : 'bg-[var(--outline)] group-hover:bg-[var(--primary)] group-hover:scale-125'}`} />
               <span className={`text-xs uppercase tracking-widest transition-colors ${isActive ? 'text-[var(--primary)] font-bold' : 'text-[var(--on-surface-variant)] group-hover:text-[var(--primary)]'}`}>
-                {sec.title.length > 8 ? sec.title.slice(0, 7) + '…' : sec.title}
+                {sec.title.length > 12 ? sec.title.slice(0, 10) + '…' : sec.title}
               </span>
             </button>
           );

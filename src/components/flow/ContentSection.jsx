@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { ExternalLink } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 
@@ -13,7 +12,7 @@ const ContentSection = ({ section }) => (
 );
 
 const TextBlock = ({ content }) => (
-  <p className="text-[var(--on-surface-variant)] text-sm leading-relaxed">{content}</p>
+  <p className="text-sm text-[var(--on-surface-variant)] leading-relaxed">{content}</p>
 );
 
 const SkillsGrid = ({ skills }) => {
@@ -37,19 +36,19 @@ const SkillsGrid = ({ skills }) => {
 };
 
 const ProjectCards = ({ projects }) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
     {projects.map((p) => (
-      <div key={p.name} className="p-4 rounded-[3rem] bg-[var(--surface-container-low)]/80 shadow-[0_20px_40px_var(--shadow-tint)]">
-        <h4 className="text-sm font-bold text-[var(--primary)] mb-1">{p.name}</h4>
-        <p className="text-xs text-[var(--on-surface-variant)] mb-3 line-clamp-2">{p.description}</p>
-        <div className="flex flex-wrap gap-1 mb-3">
+      <div key={p.name} className="p-5 rounded-2xl bg-[var(--surface-container-low)]/80 shadow-[0_20px_40px_var(--shadow-tint)]">
+        <h4 className="text-sm font-bold text-[var(--primary)] mb-2">{p.name}</h4>
+        <p className="text-xs text-[var(--on-surface-variant)] mb-3 leading-relaxed">{p.description}</p>
+        <div className="flex flex-wrap gap-1.5 mb-3">
           {p.tech.map((t) => (
-            <span key={t} className="px-2 py-0.5 text-xs rounded-full bg-[var(--tertiary-container)]/40 text-[var(--tertiary)] font-medium">{t}</span>
+            <span key={t} className="px-2.5 py-1 text-xs rounded-full bg-[var(--tertiary-container)]/40 text-[var(--tertiary)] font-medium">{t}</span>
           ))}
         </div>
-        <div className="flex gap-3">
-          {p.github && <a href={p.github} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--outline)] hover:text-[var(--primary)] flex items-center gap-1 transition-colors"><FaGithub size={11} /> Code</a>}
-          {p.live && <a href={p.live} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--outline)] hover:text-[var(--primary)] flex items-center gap-1 transition-colors"><ExternalLink size={11} /> Live</a>}
+        <div className="flex gap-4">
+          {p.github && <a href={p.github} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--outline)] hover:text-[var(--primary)] flex items-center gap-1 transition-colors"><FaGithub size={12} /> Code</a>}
+          {p.live && <a href={p.live} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--outline)] hover:text-[var(--primary)] flex items-center gap-1 transition-colors"><ExternalLink size={12} /> Live</a>}
         </div>
       </div>
     ))}
@@ -57,27 +56,27 @@ const ProjectCards = ({ projects }) => (
 );
 
 const Timeline = ({ experience }) => (
-  <div className="space-y-3">
+  <div className="space-y-5">
     {experience.map((exp) => (
-      <div key={exp.company} className="relative pl-5">
-        <div className={`absolute left-0 top-2 w-2.5 h-2.5 rounded-full ${exp.roles[0]?.current ? 'bg-[var(--tertiary)] ring-4 ring-[var(--tertiary)]/15' : 'bg-[var(--primary-container)] ring-4 ring-[var(--primary-container)]/10'}`} />
-        <h4 className="text-sm font-bold text-[var(--primary)]">{exp.company}</h4>
+      <div key={exp.company} className="relative pl-6">
+        <div className={`absolute left-0 top-1.5 w-3 h-3 rounded-full ${exp.roles[0]?.current ? 'bg-[var(--tertiary)] ring-4 ring-[var(--tertiary)]/15' : 'bg-[var(--primary-container)] ring-4 ring-[var(--primary-container)]/10'}`} />
+        <h4 className="text-sm font-bold text-[var(--primary)] mb-1">{exp.company}</h4>
         {exp.roles.map((r) => (
-          <div key={r.title} className="flex items-baseline justify-between mt-0.5">
-            <span className="text-xs text-[var(--on-surface-variant)]">{r.title}</span>
-            <span className="text-xs text-[var(--outline)] ml-2 shrink-0">{r.period}</span>
+          <div key={r.title} className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mt-1">
+            <span className="text-sm text-[var(--on-surface-variant)]">{r.title}</span>
+            <span className="text-xs text-[var(--outline)] sm:ml-2 shrink-0">{r.period}</span>
           </div>
         ))}
-        <p className="text-xs text-[var(--on-surface-variant)] mt-1">{exp.description}</p>
+        <p className="text-xs text-[var(--on-surface-variant)] mt-2 leading-relaxed">{exp.description}</p>
       </div>
     ))}
   </div>
 );
 
 const StatsGrid = ({ stats }) => (
-  <div className="grid grid-cols-2 gap-3">
+  <div className="grid grid-cols-2 gap-4">
     {stats.map((s) => (
-      <div key={s.label} className="p-4 rounded-[3rem] bg-[var(--surface-container-low)]/80 text-center shadow-[0_20px_40px_var(--shadow-tint)]">
+      <div key={s.label} className="p-5 rounded-2xl bg-[var(--surface-container-low)]/80 text-center shadow-[0_20px_40px_var(--shadow-tint)]">
         <p className="text-2xl font-extrabold text-[var(--primary)]">{s.value}</p>
         <p className="text-xs text-[var(--on-surface-variant)] mt-1 uppercase tracking-wider">{s.label}</p>
       </div>

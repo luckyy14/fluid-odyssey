@@ -92,7 +92,7 @@ const PersonalizedView = ({ visitor, onReset }) => {
           <AnimatePresence>
             {blocks.filter((b) => b.id === 'welcome').map((b) => (
               <motion.div key={b.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="rounded-[3rem] rounded-tl-lg bg-[var(--surface-container-low)] px-5 py-4 mb-6 lg:px-8 lg:py-6 lg:mb-10 lg:max-w-2xl">
+                className="rounded-2xl rounded-tl-md bg-[var(--surface-container-low)] px-5 py-4 mb-6 lg:px-8 lg:py-6 lg:mb-10 lg:max-w-2xl">
                 <p className="text-sm lg:text-base text-[var(--on-surface)] leading-relaxed">{b.content}</p>
               </motion.div>
             ))}
@@ -127,7 +127,7 @@ const PersonalizedView = ({ visitor, onReset }) => {
             <AnimatePresence>
               {blocks.filter((b) => b.id !== 'welcome').map((b) => (
                 <motion.div key={b.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} className="mb-3">
-                  <div className="rounded-[3rem] bg-[var(--surface-container-low)]/80 backdrop-blur-md shadow-[0_20px_40px_var(--shadow-tint)] p-5 lg:p-8">
+                  <div className="rounded-2xl bg-[var(--surface-container-low)]/80 backdrop-blur-md shadow-[0_20px_40px_var(--shadow-tint)] p-5 lg:p-8">
                     <div className="flex items-center gap-2 mb-2">
                       <Sparkles size={12} className="text-[var(--primary)]" />
                       <span className="text-xs font-semibold text-[var(--primary)]">{b.title}</span>
@@ -145,7 +145,7 @@ const PersonalizedView = ({ visitor, onReset }) => {
             {content.sections.map((sec, i) => (
               <motion.div key={sec.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + i * 0.06 }}>
                 <button onClick={() => toggle(sec.id)}
-                  className="w-full flex items-center justify-between px-5 py-3.5 rounded-[3rem] bg-[var(--surface-container-low)] hover:bg-[var(--surface-container)] transition-colors cursor-pointer">
+                  className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl bg-[var(--surface-container-low)] hover:bg-[var(--surface-container)] transition-colors cursor-pointer">
                   <span className="text-sm font-semibold text-[var(--primary)]">{sec.title}</span>
                   <motion.span animate={{ rotate: open.has(sec.id) ? 90 : 0 }} className="text-[var(--outline)]"><ChevronRight size={16} /></motion.span>
                 </button>
@@ -168,7 +168,7 @@ const PersonalizedView = ({ visitor, onReset }) => {
                 <motion.div key={sec.id} id={`sec-${sec.id}`}
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + i * 0.08 }}
-                  className={`${span} rounded-[3rem] bg-[var(--surface-container-low)]/60 backdrop-blur-md p-8 shadow-[0_20px_40px_var(--shadow-tint)]`}>
+                  className={`${span} rounded-2xl bg-[var(--surface-container-low)]/60 backdrop-blur-md p-6 lg:p-8 shadow-[0_20px_40px_var(--shadow-tint)] overflow-hidden`}>
                   <h2 className="text-xs tracking-[0.3em] text-[var(--primary)]/50 uppercase font-bold mb-5">{sec.title}</h2>
                   <ContentSection section={sec} />
                 </motion.div>
@@ -193,7 +193,7 @@ const PersonalizedView = ({ visitor, onReset }) => {
 
 /* Mobile top nav — hidden on lg */
 const MobileNav = ({ onReset, llmStatus, progress }) => (
-  <nav className="fixed top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-2xl rounded-full bg-[var(--surface)]/80 backdrop-blur-xl shadow-[0_20px_40px_var(--shadow-tint)] flex items-center justify-between px-4 sm:px-6 py-2.5 z-50 lg:hidden">
+  <nav className="fixed top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-2xl rounded-2xl bg-[var(--surface)]/80 backdrop-blur-xl shadow-[0_20px_40px_var(--shadow-tint)] flex items-center justify-between px-4 sm:px-6 py-3 z-50 lg:hidden">
     <button onClick={onReset} className="flex items-center gap-1 text-xs text-[var(--on-surface-variant)] hover:text-[var(--primary)] cursor-pointer group transition-colors">
       <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" /> back
     </button>
