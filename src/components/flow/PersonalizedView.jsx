@@ -62,12 +62,9 @@ const PersonalizedView = ({ visitor, onReset }) => {
       {/* Mobile nav pill (hidden on lg) */}
       <MobileNav onReset={onReset} llmStatus={llm} progress={progress} />
 
-      {/* Desktop top bar (hidden on mobile) */}
-      <DesktopTopBar onReset={onReset} llmStatus={llm} progress={progress} />
-
       {/* Main — shifted right on desktop for side rail */}
       <div className="lg:pl-20">
-        <div className="max-w-2xl mx-auto px-5 pt-24 lg:pt-16 pb-10 lg:max-w-5xl lg:px-12">
+        <div className="max-w-2xl mx-auto px-5 pt-24 lg:pt-10 pb-10 lg:max-w-5xl lg:px-12">
           {/* Header */}
           <motion.header initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="flex items-end justify-between mb-8 lg:mb-16">
             <div className="flex items-center gap-4 lg:block">
@@ -208,23 +205,6 @@ const MobileNav = ({ onReset, llmStatus, progress }) => (
         <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="text-[#3d5060] hover:text-[#94ccff] transition-colors"><FaLinkedin size={13} /></a>
         <a href={profile.github} target="_blank" rel="noopener noreferrer" className="text-[#3d5060] hover:text-[#94ccff] transition-colors"><FaGithub size={13} /></a>
       </div>
-    </div>
-  </nav>
-);
-
-/* Desktop top bar — hidden on mobile */
-const DesktopTopBar = ({ onReset, llmStatus, progress }) => (
-  <nav className="hidden lg:flex fixed top-0 left-20 right-0 z-50 justify-between items-center px-12 py-6 bg-[#0d1b2a]/80 backdrop-blur-xl">
-    <button onClick={onReset} className="text-sm text-[#8899aa] hover:text-[#94ccff] cursor-pointer transition-colors flex items-center gap-2 group">
-      <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Start over
-    </button>
-    <div className="flex items-center gap-6">
-      {llmStatus === LLM_STATUS.LOADING && (
-        <span className="flex items-center gap-2 text-xs text-[#94ccff]/60 font-mono">
-          <Loader2 size={12} className="animate-spin" /> {progress || 'Loading model...'}
-        </span>
-      )}
-      <a href={`mailto:${profile.email}`} className="px-6 py-2 rounded-full bg-[#0077b6] text-white text-xs font-bold tracking-widest uppercase hover:bg-[#005c70] transition-colors">Contact</a>
     </div>
   </nav>
 );
