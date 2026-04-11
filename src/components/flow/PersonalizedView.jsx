@@ -65,9 +65,9 @@ const PersonalizedView = ({ visitor, onReset }) => {
 
       {/* Main — shifted right on desktop for side rail */}
       <div className="lg:pl-24">
-        <div className="max-w-2xl mx-auto px-5 pt-24 lg:pt-10 pb-10 lg:max-w-5xl lg:px-12">
+        <div className="max-w-2xl mx-auto px-5 pt-24 lg:pt-10 pb-10 lg:max-w-5xl lg:px-12 flex flex-col gap-8">
           {/* Header */}
-          <motion.header initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="flex items-end justify-between mb-8 lg:mb-16">
+          <motion.header initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="flex items-end justify-between">
             <div className="flex items-center gap-4 lg:block">
               <div className="w-12 h-12 rounded-full bg-[var(--primary-container)] flex items-center justify-center text-lg font-extrabold text-white shrink-0 shadow-[0_20px_40px_var(--shadow-tint)] lg:hidden">
                 {profile.firstName[0]}
@@ -92,7 +92,7 @@ const PersonalizedView = ({ visitor, onReset }) => {
           <AnimatePresence>
             {blocks.filter((b) => b.id === 'welcome').map((b) => (
               <motion.div key={b.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="rounded-2xl rounded-tl-md bg-[var(--surface-container-low)] px-5 py-4 mb-6 lg:px-8 lg:py-6 lg:mb-10 lg:max-w-2xl">
+                className="rounded-2xl rounded-tl-md bg-[var(--surface-container-low)] px-5 py-4 lg:px-8 lg:py-6 lg:max-w-2xl">
                 <p className="text-sm lg:text-base text-[var(--on-surface)] leading-relaxed">{b.content}</p>
               </motion.div>
             ))}
@@ -174,7 +174,7 @@ const PersonalizedView = ({ visitor, onReset }) => {
           </div>
 
           {/* Contact */}
-          <div className="text-center pt-8 lg:pt-12">
+          <div className="text-center">
             <p className="text-xs text-[var(--on-surface-variant)] mb-3">Want to talk for real?</p>
             <div className="flex justify-center gap-3">
               <a href={`mailto:${profile.email}`} className="px-5 py-2.5 text-xs font-bold rounded-full bg-[var(--primary-container)] text-white hover:bg-[var(--secondary-container)] transition-colors">Email me</a>
