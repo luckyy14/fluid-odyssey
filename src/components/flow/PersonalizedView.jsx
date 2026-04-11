@@ -3,34 +3,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Sparkles, Loader2, ChevronRight, Send, History, X } from 'lucide-react';
 import { FaLinkedin, FaGithub, FaEnvelope } from 'react-icons/fa';
 import { getContentForVisitor } from '../../lib/contentGenerator';
-import { initEngine, chat as llmChat, isWebGPUAvailable, setProgressCallback, LLM_STATUS } from '../../lib/llmEngine';
+import { chat as llmChat, LLM_STATUS } from '../../lib/llmEngine';
 import ContentSection from './ContentSection';
 import SideRail from './SideRail';
 import ThemeToggle from '../ui/ThemeToggle';
 import { profile } from '../../data/profile';
 
-const PersonalizedView = ({ visitor, onReset }) => {
+const PersonalizedView = ({ visitor, onReset, llmStatus: llm = LLM_STATUS.IDLE }) => {
   const content = getContentForVisitor(visitor.type);
   const [open, setOpen] = useState(new Set());
   const [latestResponse, setLatestResponse] = useState(null);
   const [responseHistory, setResponseHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [llm, setLlm] = useState(LLM_STATUS.IDLE);
-  const [progress, setProgress] = useState('');
   const [busy, setBusy] = useState(false);
   const [question, setQuestion] = useState('');
   const [activeSection, setActiveSection] = useState(content.sections[0]?.id);
   const chatHistory = useRef([]);
   const responseRef = useRef(null);
 
-  useEffect(() => {
-    if (!isWebGPUAvailable()) { setLlm(LLM_STATUS.ERROR); return; }
-    setLlm(LLM_STATUS.LOADING);
-    setProgressCallback((p) => setProgress(p.text || ''));
-    initEngine().then(() => setLlm(LLM_STATUS.READY)).catch(() => setLlm(LLM_STATUS.ERROR));
-  }, []);
-
-  // Auto-generate welcome
+  // Auto-generate welcome when model is ready
   useEffect(() => {
     if (llm !== LLM_STATUS.READY || latestResponse) return;
     const ctx = visitor.type === 'custom' ? visitor.intro : `I'm a ${visitor.label.toLowerCase()}. ${visitor.intro}`;
@@ -72,7 +63,7 @@ const PersonalizedView = ({ visitor, onReset }) => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="min-h-dvh relative z-10">
       <SideRail sections={content.sections} activeSection={activeSection} onSectionClick={(id) => { setActiveSection(id); document.getElementById(`sec-${id}`)?.scrollIntoView({ behavior: 'smooth' }); }} llmStatus={llm} onReset={onReset} />
-      <MobileNav onReset={onReset} llmStatus={llm} progress={progress} />
+      <MobileNav onReset={onReset} llmStatus={llm} />
 
       <div className="lg:pl-24">
         <div className="max-w-2xl mx-auto px-5 pt-24 lg:pt-10 pb-10 lg:max-w-5xl lg:px-12 flex flex-col gap-8">
@@ -230,7 +221,7 @@ const PersonalizedView = ({ visitor, onReset }) => {
   );
 };
 
-const MobileNav = ({ onReset, llmStatus, progress }) => (
+const MobileNav = ({ onReset, llmStatus }) => (
   <nav className="fixed top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-2xl rounded-2xl bg-[var(--surface)]/80 backdrop-blur-xl shadow-[0_20px_40px_var(--shadow-tint)] flex items-center justify-between px-4 sm:px-6 py-3 z-50 lg:hidden">
     <button onClick={onReset} className="flex items-center gap-1 text-xs text-[var(--on-surface-variant)] hover:text-[var(--primary)] cursor-pointer group transition-colors">
       <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" /> back

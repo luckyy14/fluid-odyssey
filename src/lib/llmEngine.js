@@ -52,6 +52,20 @@ export function setProgressCallback(cb) {
   onProgressCallback = cb;
 }
 
+/**
+ * Parse download progress from WebLLM's text-based progress.
+ * Returns 0-1 float. WebLLM reports like "Loading model... 45.2MB/200.1MB"
+ */
+export function parseProgress(progressObj) {
+  if (!progressObj) return 0;
+  if (typeof progressObj.progress === 'number') return progressObj.progress;
+  const text = progressObj.text || '';
+  const match = text.match(/([\d.]+)\s*(?:MB|GB)\s*\/\s*([\d.]+)\s*(?:MB|GB)/i);
+  if (match) return parseFloat(match[1]) / parseFloat(match[2]);
+  if (text.toLowerCase().includes('finish')) return 1;
+  return 0;
+}
+
 export async function initEngine() {
   if (engine) return engine;
   if (loadingPromise) return loadingPromise;

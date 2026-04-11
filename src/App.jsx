@@ -1,16 +1,43 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import WelcomeScreen from './components/flow/WelcomeScreen';
 import PersonalizedView from './components/flow/PersonalizedView';
 import FluidBackground from './components/ui/FluidBackground';
 import RippleTransition from './components/ui/RippleTransition';
+import WaterLoader from './components/ui/WaterLoader';
 import { ThemeContext, useThemeProvider } from './hooks/useTheme';
+import {
+  initEngine,
+  isWebGPUAvailable,
+  setProgressCallback,
+  parseProgress,
+  LLM_STATUS,
+} from './lib/llmEngine';
 
 function App() {
   const themeCtx = useThemeProvider();
   const [visitor, setVisitor] = useState(null);
   const [ripple, setRipple] = useState(null);
   const [transitioning, setTransitioning] = useState(false);
+  const [llmStatus, setLlmStatus] = useState(LLM_STATUS.IDLE);
+  const [loadProgress, setLoadProgress] = useState(0);
+  const [loadText, setLoadText] = useState('');
+
+  // Start loading model immediately on mount
+  useEffect(() => {
+    if (!isWebGPUAvailable()) {
+      setLlmStatus(LLM_STATUS.ERROR);
+      return;
+    }
+    setLlmStatus(LLM_STATUS.LOADING);
+    setProgressCallback((p) => {
+      setLoadProgress(parseProgress(p));
+      setLoadText(p.text || '');
+    });
+    initEngine()
+      .then(() => setLlmStatus(LLM_STATUS.READY))
+      .catch(() => setLlmStatus(LLM_STATUS.ERROR));
+  }, []);
 
   const handleVisitorIdentified = useCallback((data, e) => {
     const origin = e ? { x: e.clientX, y: e.clientY } : null;
@@ -37,6 +64,14 @@ function App() {
     <ThemeContext.Provider value={themeCtx}>
       <div className="min-h-dvh relative overflow-hidden bg-[var(--surface)] theme-transition">
         <FluidBackground />
+
+        {/* Water fill loader — shows during model download on ALL pages */}
+        <AnimatePresence>
+          {llmStatus === LLM_STATUS.LOADING && (
+            <WaterLoader key="water" progress={loadProgress} statusText={loadText} />
+          )}
+        </AnimatePresence>
+
         <AnimatePresence mode="wait">
           {ripple && <RippleTransition key="ripple" origin={ripple} />}
         </AnimatePresence>
@@ -45,7 +80,7 @@ function App() {
             <WelcomeScreen key="welcome" onVisitorIdentified={handleVisitorIdentified} />
           )}
           {visitor && !transitioning && (
-            <PersonalizedView key="personal" visitor={visitor} onReset={handleReset} />
+            <PersonalizedView key="personal" visitor={visitor} onReset={handleReset} llmStatus={llmStatus} />
           )}
         </AnimatePresence>
       </div>
