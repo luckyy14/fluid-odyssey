@@ -88,12 +88,24 @@ export async function chat(userMessage, history = []) {
 
   const reply = await engine.chat.completions.create({
     messages,
-    max_tokens: 256,
+    max_tokens: 512,
     temperature: 0.3,
     top_p: 0.85,
+    stop: ['\n\n', '<|im_end|>', '</s>'],
   });
 
-  return reply.choices[0].message.content;
+  let text = reply.choices[0].message.content || '';
+
+  // Fix incomplete sentences — if it ends mid-word or without punctuation, trim to last complete sentence
+  text = text.trim();
+  if (text && !'.!?:)"'.includes(text[text.length - 1])) {
+    const lastSentenceEnd = Math.max(text.lastIndexOf('. '), text.lastIndexOf('! '), text.lastIndexOf('? '), text.lastIndexOf('.'), text.lastIndexOf('!'), text.lastIndexOf('?'));
+    if (lastSentenceEnd > text.length * 0.4) {
+      text = text.slice(0, lastSentenceEnd + 1);
+    }
+  }
+
+  return text;
 }
 
 export function isWebGPUAvailable() {
