@@ -106,6 +106,11 @@ body {
   .ripple-bg {
     background: radial-gradient(circle at 50% 50%, var(--ripple-tint) 0%, transparent 70%);
   }
+}
+
+@keyframes water-wave {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(3deg); }
 
   /* Theme transition on color-bearing properties */
   .theme-transition {
