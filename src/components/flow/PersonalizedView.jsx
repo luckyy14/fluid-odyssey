@@ -201,7 +201,7 @@ const MobileNav = ({ onReset, llmStatus, progress }) => (
     </button>
     <div className="flex items-center gap-3">
       {llmStatus === LLM_STATUS.LOADING && <Loader2 size={12} className="animate-spin text-[#94ccff]" />}
-      {llmStatus === LLM_STATUS.LOADING && progress && <span className="text-[0.643rem] text-[#94ccff]/50 font-mono truncate max-w-[100px]">{progress}</span>}
+      {llmStatus === LLM_STATUS.LOADING && progress && <span className="text-xs text-[#94ccff]/50 font-mono truncate max-w-[100px]">{progress}</span>}
       {llmStatus === LLM_STATUS.READY && <span className="flex items-center gap-1 text-xs text-[#83d3e1] font-bold"><span className="w-1.5 h-1.5 rounded-full bg-[#83d3e1] animate-pulse" />AI</span>}
       <div className="flex items-center gap-2.5 pl-2.5 border-l border-[#2a3a4a]/15">
         <a href={`mailto:${profile.email}`} className="text-[#3d5060] hover:text-[#94ccff] transition-colors"><FaEnvelope size={13} /></a>

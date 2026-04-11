@@ -1,6 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
+/* Critical overrides — outside @layer to beat Tailwind preflight */
+html {
+  font-size: 16px !important;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+  background-color: #0d1b2a !important;
+  color: #e0e8f0 !important;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
 @layer base {
   :root {
     --surface: #0d1b2a;
@@ -22,16 +36,6 @@
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  html { font-size: 14px; scroll-behavior: smooth; }
-
-  body {
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-    background: var(--surface);
-    color: var(--on-surface);
-    overflow-x: hidden;
-    -webkit-font-smoothing: antialiased;
-  }
 
   ::selection {
     background: rgba(148, 204, 255, 0.2);

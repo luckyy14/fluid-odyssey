@@ -16,7 +16,7 @@ const SideRail = ({ sections, activeSection, onSectionClick, llmStatus, onReset 
       >
         {profile.firstName[0]}
       </motion.button>
-      <span className="text-[8px] tracking-[0.2em] uppercase text-[#3d5060] mb-8">v1.0</span>
+      <span className="text-xs tracking-[0.2em] uppercase text-[#3d5060] mb-8">v1.0</span>
 
       {/* Section nav */}
       <div className="flex flex-col gap-6 mt-2">
@@ -29,7 +29,7 @@ const SideRail = ({ sections, activeSection, onSectionClick, llmStatus, onReset 
               className="flex flex-col items-center gap-1 cursor-pointer group transition-all"
             >
               <span className={`w-1.5 h-1.5 rounded-full transition-all ${isActive ? 'bg-[#94ccff] scale-150' : 'bg-[#3d5060] group-hover:bg-[#94ccff] group-hover:scale-125'}`} />
-              <span className={`text-[8px] uppercase tracking-widest transition-colors ${isActive ? 'text-[#94ccff] font-bold' : 'text-[#8899aa] group-hover:text-[#94ccff]'}`}>
+              <span className={`text-xs uppercase tracking-widest transition-colors ${isActive ? 'text-[#94ccff] font-bold' : 'text-[#8899aa] group-hover:text-[#94ccff]'}`}>
                 {sec.title.length > 8 ? sec.title.slice(0, 7) + '…' : sec.title}
               </span>
             </button>
@@ -43,7 +43,7 @@ const SideRail = ({ sections, activeSection, onSectionClick, llmStatus, onReset 
         {llmStatus === LLM_STATUS.READY && (
           <div className="flex flex-col items-center gap-1">
             <Sparkles size={12} className="text-[#83d3e1]" />
-            <span className="text-[8px] text-[#83d3e1] font-bold uppercase tracking-wider">AI</span>
+            <span className="text-xs text-[#83d3e1] font-bold uppercase tracking-wider">AI</span>
           </div>
         )}
         {llmStatus === LLM_STATUS.LOADING && (
@@ -58,7 +58,7 @@ const SideRail = ({ sections, activeSection, onSectionClick, llmStatus, onReset 
         </div>
 
         {/* Vertical text */}
-        <span className="text-[9px] tracking-[0.4em] text-[#3d5060] uppercase" style={{ writingMode: 'vertical-rl' }}>
+        <span className="text-xs tracking-[0.4em] text-[#3d5060] uppercase" style={{ writingMode: 'vertical-rl' }}>
           © 2025
         </span>
       </div>

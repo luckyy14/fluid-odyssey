@@ -32,8 +32,8 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-dvh relative overflow-hidden bg-[#f4faff]">
-      <FluidBackground variant={visitor ? 'light' : 'light'} />
+    <div className="min-h-dvh relative overflow-hidden bg-[#0d1b2a]">
+      <FluidBackground variant="dark" />
       <AnimatePresence mode="wait">
         {ripple && <RippleTransition key="ripple" origin={ripple} />}
       </AnimatePresence>
