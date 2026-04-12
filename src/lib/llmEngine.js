@@ -102,20 +102,63 @@ export async function chat(userMessage, history = []) {
 
   const reply = await engine.chat.completions.create({
     messages,
-    max_tokens: 512,
-    temperature: 0.3,
-    top_p: 0.85,
+    max_tokens: 200,
+    temperature: 0.1,
+    top_p: 0.8,
+    frequency_penalty: 1.5,
+    presence_penalty: 1.0,
     stop: ['<|im_end|>', '</s>'],
   });
 
   let text = reply.choices[0].message.content || '';
+  text = cleanResponse(text);
+  return text;
+}
 
-  // Fix incomplete sentences — if it ends mid-word or without punctuation, trim to last complete sentence
+/**
+ * Clean model output: trim to complete sentences and cut repetition loops.
+ */
+function cleanResponse(raw) {
+  let text = raw.trim();
+  if (!text) return text;
+
+  // Detect repetition: split into sentences, find where a sentence repeats
+  const sentences = text.split(/(?<=[.!?])\s+/);
+  const seen = new Set();
+  const unique = [];
+  for (const s of sentences) {
+    const normalized = s.trim().toLowerCase();
+    if (normalized.length < 5) continue;
+    if (seen.has(normalized)) break; // Stop at first repeat
+    seen.add(normalized);
+    unique.push(s.trim());
+  }
+  text = unique.join(' ');
+
+  // Also catch phrase-level repeats like "I'd rather not... I'd rather not..."
+  const phrases = text.split(/(?:- |\n)/);
+  if (phrases.length > 3) {
+    const seenPhrases = new Set();
+    const cleanPhrases = [];
+    for (const p of phrases) {
+      const key = p.trim().toLowerCase().slice(0, 40);
+      if (key.length < 10) { cleanPhrases.push(p); continue; }
+      if (seenPhrases.has(key)) break;
+      seenPhrases.add(key);
+      cleanPhrases.push(p);
+    }
+    text = cleanPhrases.join(phrases[0].startsWith('-') ? '\n- ' : ' ');
+  }
+
+  // Trim to last complete sentence
   text = text.trim();
   if (text && !'.!?:)"'.includes(text[text.length - 1])) {
-    const lastSentenceEnd = Math.max(text.lastIndexOf('. '), text.lastIndexOf('! '), text.lastIndexOf('? '), text.lastIndexOf('.'), text.lastIndexOf('!'), text.lastIndexOf('?'));
-    if (lastSentenceEnd > text.length * 0.4) {
-      text = text.slice(0, lastSentenceEnd + 1);
+    const lastEnd = Math.max(
+      text.lastIndexOf('. '), text.lastIndexOf('! '), text.lastIndexOf('? '),
+      text.lastIndexOf('.'), text.lastIndexOf('!'), text.lastIndexOf('?'),
+    );
+    if (lastEnd > text.length * 0.3) {
+      text = text.slice(0, lastEnd + 1);
     }
   }
 
