@@ -1,41 +1,24 @@
 import { profile, skills, experience, projects, education, awards, patent } from '../data/profile';
 
-const MODEL_ID = 'SmolLM2-360M-Instruct-q4f16_1-MLC';
+const MODEL_ID = 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC';
 
-const SYSTEM_PROMPT = `You are Lakshay Baheti. Answer ONLY using facts below. If a fact is not listed, say "I'd rather not share that" or "reach me at ${profile.email}". NEVER invent information.
+const SYSTEM_PROMPT = `You are Lakshay Baheti answering questions about yourself. Use ONLY these facts. Do NOT invent anything.
 
-FACTS ABOUT ME:
-Name: ${profile.name}
-Location: ${profile.location}
-Role: ${experience[0].roles[0].title} at ${experience[0].company}
-Email: ${profile.email}
-Phone: ${profile.phone}
-LinkedIn: ${profile.linkedin}
-GitHub: ${profile.github} (username: luckyy14)
-Education: ${education.degree} from ${education.institution} (${education.duration}), CGPA: ${education.cgpa}
+IDENTITY: ${profile.name}, ${experience[0].roles[0].title} at ${experience[0].company}, ${profile.location}. Email: ${profile.email}. LinkedIn: ${profile.linkedin}. GitHub: ${profile.github} (luckyy14). Phone: ${profile.phone}.
 
-CAREER AT ${experience[0].company.toUpperCase()}:
-${experience[0].roles.map((r) => `- ${r.title} (${r.period})`).join('\n')}
+EDUCATION: ${education.degree}, ${education.institution}, ${education.duration}, CGPA ${education.cgpa}.
 
-KEY ACHIEVEMENTS:
-${experience[0].highlights.map((h) => `- ${h}`).join('\n')}
+CAREER: ${experience[0].roles.map((r) => r.title + ' (' + r.period + ')').join(' → ')} at ${experience[0].company}.
 
-AWARDS:
-${awards.map((a) => `- ${a.name} (${a.period}): ${a.reason}`).join('\n')}
+ACHIEVEMENTS: Led team of 4 FE + 2 BE devs. Migrated 2 modules (500k+ LOC) from Struts to React+SpringBoot using Strangler pattern, 90% faster. Built DLS for 6 apps (Builder+Factory patterns). CI/CD via Azure DevOps+GitLab CI, 60% faster deploys. 12x traffic growth. OCR reduced shortfalls 26%→11%. Core Web Vitals +30%. Migrated 80+ APIs to NestJS+SpringBoot. CDN costs -80% via Azure Blob+Cloudflare Images. SEO page 10→page 1.
 
-PATENT: ${patent.name} (Application No: ${patent.applicationNo})
+TECH: ${skills.map((s) => s.name).join(', ')}.
 
-TECH STACK: ${skills.map((s) => s.name).join(', ')}
+AWARDS: ${awards.map((a) => a.name + ' (' + a.period + ')').join(', ')}. Patent: ${patent.name} (${patent.applicationNo}).
 
-SIDE PROJECTS:
-${projects.map((p) => `- ${p.name}: ${p.description} | ${p.github}${p.live ? ' | ' + p.live : ''}`).join('\n')}
+PROJECTS: ${projects.map((p) => p.name + ': ' + p.description).join('. ')}.
 
-RULES:
-- Answer as Lakshay in first person
-- Keep responses to 2-4 sentences
-- ONLY use facts listed above
-- If asked about manager name, say "I report to engineering leadership"
-- If unsure, say "I'd rather share that over a call — email me at ${profile.email}"`;
+RULES: First person only. 2-3 sentences max. If unsure say "reach me at ${profile.email}".`;
 
 let engine = null;
 let loadingPromise = null;
@@ -54,7 +37,7 @@ export function setProgressCallback(cb) {
 
 /**
  * Parse download progress from WebLLM's text-based progress.
- * Returns 0-1 float. WebLLM reports like "Loading model... 45.2MB/200.1MB"
+ * Returns 0-1 float.
  */
 export function parseProgress(progressObj) {
   if (!progressObj) return 0;
@@ -96,7 +79,7 @@ export async function chat(userMessage, history = []) {
 
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
-    ...history.slice(-6),
+    ...history.slice(-4),
     { role: 'user', content: userMessage },
   ];
 
@@ -107,7 +90,7 @@ export async function chat(userMessage, history = []) {
     top_p: 0.8,
     frequency_penalty: 1.5,
     presence_penalty: 1.0,
-    stop: ['<|im_end|>', '</s>'],
+    stop: ['<|im_end|>', '</s>', '<|endoftext|>'],
   });
 
   let text = reply.choices[0].message.content || '';
@@ -122,33 +105,18 @@ function cleanResponse(raw) {
   let text = raw.trim();
   if (!text) return text;
 
-  // Detect repetition: split into sentences, find where a sentence repeats
+  // Detect sentence-level repetition
   const sentences = text.split(/(?<=[.!?])\s+/);
   const seen = new Set();
   const unique = [];
   for (const s of sentences) {
-    const normalized = s.trim().toLowerCase();
-    if (normalized.length < 5) continue;
-    if (seen.has(normalized)) break; // Stop at first repeat
-    seen.add(normalized);
+    const key = s.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (key.length < 5) continue;
+    if (seen.has(key)) break;
+    seen.add(key);
     unique.push(s.trim());
   }
   text = unique.join(' ');
-
-  // Also catch phrase-level repeats like "I'd rather not... I'd rather not..."
-  const phrases = text.split(/(?:- |\n)/);
-  if (phrases.length > 3) {
-    const seenPhrases = new Set();
-    const cleanPhrases = [];
-    for (const p of phrases) {
-      const key = p.trim().toLowerCase().slice(0, 40);
-      if (key.length < 10) { cleanPhrases.push(p); continue; }
-      if (seenPhrases.has(key)) break;
-      seenPhrases.add(key);
-      cleanPhrases.push(p);
-    }
-    text = cleanPhrases.join(phrases[0].startsWith('-') ? '\n- ' : ' ');
-  }
 
   // Trim to last complete sentence
   text = text.trim();
