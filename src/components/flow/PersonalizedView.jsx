@@ -19,20 +19,22 @@ const PersonalizedView = ({ visitor, onReset, llmStatus: llm = LLM_STATUS.IDLE }
   const [question, setQuestion] = useState('');
   const [activeSection, setActiveSection] = useState(content.sections[0]?.id);
   const chatHistory = useRef([]);
+  const welcomeDone = useRef(false);
   const responseRef = useRef(null);
 
-  // Auto-generate welcome when model is ready
+  // Auto-generate welcome when model is ready — runs only once
   useEffect(() => {
-    if (llm !== LLM_STATUS.READY || latestResponse) return;
-    const ctx = visitor.type === 'custom' ? visitor.intro : `I'm a ${visitor.label.toLowerCase()}. ${visitor.intro}`;
+    if (llm !== LLM_STATUS.READY || welcomeDone.current) return;
+    welcomeDone.current = true;
     setBusy(true);
+    const ctx = visitor.type === 'custom' ? visitor.intro : `I'm a ${visitor.label.toLowerCase()}. ${visitor.intro}`;
     llmChat(`The visitor said: "${ctx}". Write a warm 2-3 sentence welcome. Be yourself — Lakshay.`, [])
       .then((r) => {
         chatHistory.current.push({ role: 'assistant', content: r });
         setLatestResponse({ label: 'Welcome', content: r });
       })
       .catch(() => {}).finally(() => setBusy(false));
-  }, [llm, visitor, latestResponse]);
+  }, [llm, visitor]);
 
   const ask = useCallback(async (prompt, label) => {
     if (busy) return;
@@ -41,7 +43,6 @@ const PersonalizedView = ({ visitor, onReset, llmStatus: llm = LLM_STATUS.IDLE }
     if (latestResponse) {
       setResponseHistory((prev) => [latestResponse, ...prev]);
     }
-    setLatestResponse(null);
 
     try {
       if (llm === LLM_STATUS.READY) {
@@ -91,14 +92,8 @@ const PersonalizedView = ({ visitor, onReset, llmStatus: llm = LLM_STATUS.IDLE }
           {/* === SINGLE FLUID RESPONSE AREA === */}
           <div ref={responseRef}>
             <AnimatePresence mode="wait">
-              {busy && !latestResponse && (
-                <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="rounded-2xl bg-[var(--surface-container-low)] p-6 lg:p-8">
-                  <TypingDots />
-                </motion.div>
-              )}
               {latestResponse && (
-                <motion.div key={latestResponse.label}
+                <motion.div key={latestResponse.label + latestResponse.content.slice(0, 20)}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -12 }}
@@ -148,6 +143,7 @@ const PersonalizedView = ({ visitor, onReset, llmStatus: llm = LLM_STATUS.IDLE }
                 </motion.div>
               )}
             </AnimatePresence>
+            {busy && <div className="pt-3"><TypingDots /></div>}
           </div>
 
           {/* Topics + input */}

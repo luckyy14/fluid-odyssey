@@ -105,7 +105,7 @@ export async function chat(userMessage, history = []) {
     max_tokens: 512,
     temperature: 0.3,
     top_p: 0.85,
-    stop: ['\n\n', '<|im_end|>', '</s>'],
+    stop: ['<|im_end|>', '</s>'],
   });
 
   let text = reply.choices[0].message.content || '';
