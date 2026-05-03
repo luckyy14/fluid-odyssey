@@ -1,5 +1,22 @@
 import { parse, Allow } from 'partial-json';
 
+// Pre-clean the LLM's raw output before parsing:
+//   - strip leading ```json or ``` fences and trailing ``` fences
+//   - quote bare object keys ({ foo: 1 } → { "foo": 1 }) — Qwen 1.5B drops them
+//   - convert single-quoted string values/keys to double-quoted
+// Best-effort: regexes only fire outside string contexts as a heuristic; bad input
+// just falls through to partial-json's existing error tolerance.
+function normalize(raw) {
+  let s = raw;
+  // Strip markdown fence prefix
+  s = s.replace(/^\s*```(?:json|json5)?\s*\n?/i, '');
+  // Strip trailing fence (may or may not have closed if streaming cut early)
+  s = s.replace(/\n?\s*```\s*$/, '');
+  // Quote bare keys: { foo: ... }  or  , foo: ...
+  s = s.replace(/([{,]\s*)([A-Za-z_$][\w$]*)(\s*):/g, '$1"$2"$3:');
+  return s;
+}
+
 /**
  * Streaming parser for pass-2 SceneSpec JSON. Designed to surface three event
  * tiers as the underlying JSON stream lands:
@@ -18,7 +35,8 @@ export function createPartialJsonParser() {
 
   function tryParse() {
     if (!buf.trim()) return;
-    try { lastObj = parse(buf, Allow.ALL) || {}; }
+    const cleaned = normalize(buf);
+    try { lastObj = parse(cleaned, Allow.ALL) || {}; }
     catch { /* not parseable yet */ }
   }
 
@@ -27,10 +45,17 @@ export function createPartialJsonParser() {
     tryParse();
   }
 
+  // Coerce common model mistakes: `background: "noise"` → `{ kind: "noise" }`.
+  function bgKindOf(t) {
+    if (!t || !t.background) return undefined;
+    if (typeof t.background === 'string') return t.background;
+    return t.background.kind;
+  }
+
   function hasTheme() {
     if (themeFired) return false;
     const t = lastObj?.theme;
-    return !!(t && t.palette_name && t.type_family && t.density && t.radius && t.motion && t.background?.kind);
+    return !!(t && t.palette_name && t.type_family && t.density && t.radius && t.motion && bgKindOf(t));
   }
 
   function takeTheme() {
@@ -42,23 +67,20 @@ export function createPartialJsonParser() {
       density: t.density,
       radius: t.radius,
       motion: t.motion,
-      bg_kind: t.background.kind,
+      bg_kind: bgKindOf(t),
       seed: lastObj.seed | 0,
     };
   }
 
-  // Heuristic: scaffold is "stable" once the model has emitted blocks AND moved on
-  // (we see a closing bracket OR every block has at least one prop key).
+  // Heuristic: scaffold is "stable" once BOTH expected blocks have shown up
+  // with id+type. Composer prompt always asks for hero + scenario, so we wait
+  // for length ≥ 2 before firing the shell — otherwise the renderer locks in
+  // a 1-block layout and the second block_filled has nowhere to land.
   function hasBlockScaffold() {
     if (shellFired) return false;
-    if (!Array.isArray(lastObj?.blocks) || lastObj.blocks.length === 0) return false;
-    // Every block has id+type
+    if (!Array.isArray(lastObj?.blocks) || lastObj.blocks.length < 2) return false;
     if (!lastObj.blocks.every((b) => b && b.id && b.type)) return false;
-    // We've moved past blocks-array scaffold either because the last char is past `]`
-    // or because at least one block has begun props.
-    const tail = buf.trimEnd();
-    const closed = /\]\s*[,}]?\s*$/.test(tail) || /"props"\s*:/.test(buf);
-    return closed;
+    return true;
   }
 
   function takeBlockScaffold() {
@@ -112,8 +134,10 @@ export function createPartialJsonParser() {
     return lastObj;
   }
 
+  function rawBuffer() { return buf; }
+
   return {
     feed, hasTheme, takeTheme, hasBlockScaffold, takeBlockScaffold,
-    takeLayout, takeFilledBlocks, finalFlushBlocks, finalSpec,
+    takeLayout, takeFilledBlocks, finalFlushBlocks, finalSpec, rawBuffer,
   };
 }

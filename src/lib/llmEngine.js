@@ -4,6 +4,8 @@
 // Qwen instruct bundle from MLC's CDN — the site still runs, but pass-1 intent
 // routing won't reflect the personality fine-tune.
 
+import { devLog } from './devLog';
+
 const PERSONAL_MODEL_URL = import.meta.env?.VITE_PERSONAL_MODEL_URL || '';
 const PERSONAL_MODEL_LIB = import.meta.env?.VITE_PERSONAL_MODEL_LIB || '';
 const PERSONAL_MODEL_ID  = 'fluid-personal-q4f16_1-MLC';
@@ -46,11 +48,26 @@ export async function initEngine() {
   if (engine) return engine;
   if (loadingPromise) return loadingPromise;
 
+  devLog.info('llm', 'initEngine() start', {
+    model: ACTIVE_MODEL_ID,
+    bundle: useCustomBundle ? 'personal-lora' : 'fallback-qwen',
+    webgpu: isWebGPUAvailable(),
+  });
+  const stopInit = devLog.heartbeat('llm', 'engine init (download + shader compile)', 5000);
+
   loadingPromise = (async () => {
     try {
-      const { CreateMLCEngine } = await import('@mlc-ai/web-llm');
+      const { CreateWebWorkerMLCEngine } = await import('@mlc-ai/web-llm');
+      const worker = new Worker(new URL('./llm.worker.js', import.meta.url), { type: 'module' });
+      worker.addEventListener('error', (e) => devLog.warn('llm', 'worker error', e.message || e));
+      let lastLoggedPct = -1;
       const opts = {
         initProgressCallback: (progress) => {
+          const pct = Math.floor(parseProgress(progress) * 100);
+          if (pct !== lastLoggedPct && pct % 10 === 0) {
+            devLog.debug('llm', `download ${pct}%`, progress?.text);
+            lastLoggedPct = pct;
+          }
           if (onProgressCallback) onProgressCallback(progress);
         },
       };
@@ -63,14 +80,19 @@ export async function initEngine() {
             overrides: { context_window_size: 2048 },
           }],
         };
+        devLog.debug('llm', 'using custom LoRA bundle', { url: PERSONAL_MODEL_URL });
       }
-      engine = await CreateMLCEngine(ACTIVE_MODEL_ID, opts);
+      engine = await CreateWebWorkerMLCEngine(worker, ACTIVE_MODEL_ID, opts);
       initFailures = 0;
+      stopInit();
+      devLog.info('llm', 'engine ready', { model: ACTIVE_MODEL_ID });
       return engine;
     } catch (err) {
       engine = null;
       loadingPromise = null;
       initFailures++;
+      stopInit();
+      devLog.warn('llm', `engine init failed (#${initFailures})`, err);
       throw err;
     }
   })();

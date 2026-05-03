@@ -10,6 +10,7 @@ import { getPrebaked } from '../../data/prebaked';
 import { LLM_STATUS, getEngine } from '../../lib/llmEngine';
 import { INTENTS } from '../../lib/recipes';
 import { generateScene } from '../../lib/sceneOrchestrator';
+import { devLog } from '../../lib/devLog';
 
 const VISITOR_TO_INTENT = {
   recruiter: 'experience',
@@ -61,9 +62,16 @@ const PersonalizedView = ({ visitor, onReset, llmStatus = LLM_STATUS.IDLE, initi
   const handleSubmit = useCallback((e) => {
     e.preventDefault();
     const q = question.trim();
-    if (!q || busy || llmStatus !== LLM_STATUS.READY) return;
+    if (!q || busy || llmStatus !== LLM_STATUS.READY) {
+      devLog.debug('ui', 'submit ignored', { hasQ: !!q, busy, llmStatus });
+      return;
+    }
     const engine = getEngine();
-    if (!engine) return;
+    if (!engine) {
+      devLog.warn('ui', 'submit aborted — engine not available');
+      return;
+    }
+    devLog.info('ui', `submit question`, q);
     setBusy(true);
     setLastQuestion(q);
     setQuestion('');
@@ -75,6 +83,7 @@ const PersonalizedView = ({ visitor, onReset, llmStatus = LLM_STATUS.IDLE, initi
           if (evt.type === 'done') {
             setBusy(false);
             if (evt.request_id) {
+              devLog.info('ui', 'permalink set', `#p=${evt.request_id}`);
               history.replaceState(null, '', `#p=${encodeURIComponent(evt.request_id)}`);
             }
           }

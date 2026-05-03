@@ -4,6 +4,7 @@ import { themeGenerator, applyTheme } from '../lib/themeGenerator';
 import { getBlock } from './blocks/registry';
 import HoldingShell, { ThemedHoldingShell } from './HoldingShell';
 import SceneBackground from './SceneBackground';
+import { devLog } from '../lib/devLog';
 
 /**
  * Render a Scene Spec (either prebaked or streamed).
@@ -20,6 +21,7 @@ export default function SceneRenderer({ spec, iterator, question }) {
   // Prebaked path: synthesize theme + render everything immediately.
   useEffect(() => {
     if (!spec) return;
+    devLog.debug('ui', 'SceneRenderer: prebaked spec', { intent: spec.intent, blocks: spec.blocks?.length });
     const t = themeGenerator({
       palette_name: spec.theme.palette_name,
       type_family: spec.theme.type_family,
@@ -42,18 +44,29 @@ export default function SceneRenderer({ spec, iterator, question }) {
     if (!iterator) return;
     let cancelled = false;
     setTheme(null); setShell(null); setFilled({});
+    devLog.info('ui', 'SceneRenderer: live iterator attached');
     (async () => {
       try {
         for await (const evt of iterator) {
           if (cancelled) return;
+          devLog.debug('ui', `SceneRenderer ← ${evt.type}`, evt.id || evt.layout || '');
           if (evt.type === 'theme_hint' && evt.theme) { applyTheme(evt.theme); setTheme(evt.theme); }
           if (evt.type === 'theme_ready')             { applyTheme(evt.theme); setTheme(evt.theme); }
           if (evt.type === 'shell')                   setShell({ layout: evt.layout, blocks: evt.blocks });
-          if (evt.type === 'block_filled')            setFilled((f) => ({ ...f, [evt.id]: evt.props }));
+          if (evt.type === 'block_filled') {
+            setFilled((f) => ({ ...f, [evt.id]: evt.props }));
+            // Defensive: if the shell scaffold missed this block id, append it
+            // so the renderer actually mounts a slot for it.
+            setShell((s) => {
+              if (!s) return s;
+              if (s.blocks.some((b) => b.id === evt.id)) return s;
+              return { ...s, blocks: [...s.blocks, { id: evt.id, type: evt.blockType || 'markdown_prose', props_preview: {} }] };
+            });
+          }
         }
       } catch (err) {
-        // Hard failure — surface a markdown_prose fallback.
         if (cancelled) return;
+        devLog.warn('ui', 'SceneRenderer iterator threw', err);
         setShell({
           layout: 'fallback',
           blocks: [{ id: 'err', type: 'markdown_prose', props_preview: {} }],

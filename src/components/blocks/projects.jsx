@@ -1,8 +1,6 @@
 import { z } from 'zod';
-import { motion } from 'framer-motion';
-import { ExternalLink } from 'lucide-react';
-import { FaGithub } from 'react-icons/fa';
 import { BlockShell, Shimmer } from './_shared';
+import { ProjectCard, TechChip, ProjectLinks } from './leaves';
 
 const projectItem = z.object({
   name: z.string().max(60),
@@ -16,32 +14,7 @@ const projectItem = z.object({
 export function ProjGrid({ projects }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
-      {projects.map((p, i) => (
-        <motion.div
-          key={p.name}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.05 }}
-          style={{
-            padding: '1rem 1.25rem', backgroundColor: 'var(--surface-1)', borderRadius: 'var(--radius-md)',
-            display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'var(--font-family)',
-          }}
-        >
-          <p style={{ fontWeight: 700, color: 'var(--fg)', fontSize: '0.95rem' }}>{p.name}</p>
-          <p style={{ fontSize: '0.8125rem', color: 'var(--fg-muted)', lineHeight: 'var(--leading)', flex: 1 }}>{p.description}</p>
-          {p.tech?.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              {p.tech.map((t) => (
-                <span key={t} style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--surface-2)', color: 'var(--accent)' }}>{t}</span>
-              ))}
-            </div>
-          )}
-          <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
-            {p.github && <a href={p.github} target="_blank" rel="noopener noreferrer" style={linkStyle()}><FaGithub size={11} /> Code</a>}
-            {p.live && <a href={p.live} target="_blank" rel="noopener noreferrer" style={linkStyle()}><ExternalLink size={11} /> Live</a>}
-          </div>
-        </motion.div>
-      ))}
+      {projects.map((p, i) => <ProjectCard key={p.name} {...p} index={i} />)}
     </div>
   );
 }
@@ -54,7 +27,9 @@ export function ProjGridSkeleton({ tile_count = 4 }) {
   );
 }
 
-// proj_spotlight
+// proj_spotlight — single project, larger treatment. Reuses TechChip + ProjectLinks
+// leaves but keeps its own outer layout (the visual is meaningfully different
+// from the grid card).
 export function ProjSpotlight({ projects }) {
   const p = projects[0];
   if (!p) return null;
@@ -66,15 +41,10 @@ export function ProjSpotlight({ projects }) {
         <p style={{ fontSize: '0.9375rem', color: 'var(--fg-muted)', lineHeight: 'var(--leading)' }}>{p.description}</p>
         {p.tech?.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {p.tech.map((t) => (
-              <span key={t} style={{ padding: '4px 10px', fontSize: '0.75rem', borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--surface-2)', color: 'var(--accent)' }}>{t}</span>
-            ))}
+            {p.tech.map((t) => <TechChip key={t} label={t} />)}
           </div>
         )}
-        <div style={{ display: 'flex', gap: 14, marginTop: 4 }}>
-          {p.github && <a href={p.github} target="_blank" rel="noopener noreferrer" style={linkStyle()}><FaGithub size={12} /> Code</a>}
-          {p.live && <a href={p.live} target="_blank" rel="noopener noreferrer" style={linkStyle()}><ExternalLink size={12} /> Live</a>}
-        </div>
+        <ProjectLinks github={p.github} live={p.live} size={12} />
       </div>
     </BlockShell>
   );
@@ -91,8 +61,4 @@ export function ProjSpotlightSkeleton() {
       </div>
     </BlockShell>
   );
-}
-
-function linkStyle() {
-  return { fontSize: '0.75rem', color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 };
 }

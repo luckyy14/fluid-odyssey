@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { motion } from 'framer-motion';
 import { BlockShell, Shimmer } from './_shared';
+import { StackLayer } from './leaves';
 
-// tech_code_block
+// tech_code_block — atomic. No iterated leaf, kept inline.
 export function TechCodeBlock({ language, code, caption }) {
   return (
     <BlockShell>
@@ -39,24 +39,7 @@ export function TechStackLayered({ layers }) {
   return (
     <BlockShell>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {layers.map((l, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06 }}
-            style={{
-              padding: '0.875rem 1rem',
-              backgroundColor: 'var(--surface-2)',
-              borderLeft: '3px solid var(--accent)',
-              borderRadius: 'var(--radius-sm)',
-              transform: `translateX(${i * 8}px)`,
-            }}
-          >
-            <p style={{ fontWeight: 700, color: 'var(--fg)', fontSize: '0.875rem' }}>{l.name}</p>
-            {l.description && <p style={{ fontSize: '0.75rem', color: 'var(--fg-muted)', marginTop: 2 }}>{l.description}</p>}
-          </motion.div>
-        ))}
+        {layers.map((l, i) => <StackLayer key={i} {...l} index={i} />)}
       </div>
     </BlockShell>
   );

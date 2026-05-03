@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { BlockShell, Shimmer } from './_shared';
+import { ManifestoBelief } from './leaves';
 
-// phil_pullquote
+// phil_pullquote — atomic quote. No iterated leaf, kept inline.
 export function PhilPullquote({ quote, attribution }) {
   return (
     <motion.blockquote
@@ -38,18 +39,7 @@ export function PhilManifesto({ beliefs, title }) {
     <BlockShell>
       {title && <p style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.18em', color: 'var(--accent)', marginBottom: 16, fontWeight: 700 }}>{title}</p>}
       <ul style={{ display: 'flex', flexDirection: 'column', gap: 14, listStyle: 'none' }}>
-        {beliefs.map((b, i) => (
-          <motion.li
-            key={i}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.07 }}
-            style={{ fontSize: '1.0625rem', fontWeight: 600, color: 'var(--fg)', lineHeight: 'var(--leading)', display: 'flex', gap: 12 }}
-          >
-            <span style={{ color: 'var(--accent)' }}>{String(i + 1).padStart(2, '0')}.</span>
-            <span>{b}</span>
-          </motion.li>
-        ))}
+        {beliefs.map((b, i) => <ManifestoBelief key={i} text={b} index={i} />)}
       </ul>
     </BlockShell>
   );
