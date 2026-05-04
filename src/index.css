@@ -111,9 +111,18 @@ body {
 @keyframes water-wave {
   0%, 100% { transform: rotate(0deg); }
   50% { transform: rotate(3deg); }
-
-  /* Theme transition on color-bearing properties */
-  .theme-transition {
-    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
-  }
 }
+
+/* Smooth all color-bearing changes when CSS vars (theme) flip mid-stream.
+   Without this, theme_hint → theme_ready snaps the page jarringly. */
+*, *::before, *::after {
+  transition:
+    background-color 0.45s ease,
+    color 0.45s ease,
+    border-color 0.45s ease,
+    box-shadow 0.45s ease,
+    fill 0.45s ease,
+    stroke 0.45s ease;
+}
+/* Don't smooth the shimmer keyframes or framer-motion transforms. */
+[class*="animate-"], [style*="animation"] { transition: none; }

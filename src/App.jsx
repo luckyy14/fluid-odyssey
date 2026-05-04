@@ -13,6 +13,7 @@ import {
   parseProgress,
   LLM_STATUS,
 } from './lib/llmEngine';
+import { hashToSpec, loadSpec } from './lib/specCache';
 
 function App() {
   const themeCtx = useThemeProvider();
@@ -22,6 +23,30 @@ function App() {
   const [llmStatus, setLlmStatus] = useState(LLM_STATUS.IDLE);
   const [loadProgress, setLoadProgress] = useState(0);
   const [loadText, setLoadText] = useState('');
+  const [permalinkSpec, setPermalinkSpec] = useState(null);
+
+  // Permalink hash bootstrap — #p=<id> reads from IndexedDB; #s=<b64> decodes inline.
+  useEffect(() => {
+    const hash = window.location.hash.replace(/^#/, '');
+    if (!hash) return;
+    const params = new URLSearchParams(hash);
+    const sid = params.get('p');
+    const blob = params.get('s');
+    if (sid) {
+      loadSpec(sid).then((spec) => {
+        if (spec) {
+          setPermalinkSpec(spec);
+          setVisitor({ type: 'permalink', label: 'Shared', intro: '' });
+        }
+      });
+    } else if (blob) {
+      const spec = hashToSpec(blob);
+      if (spec) {
+        setPermalinkSpec(spec);
+        setVisitor({ type: 'permalink', label: 'Shared', intro: '' });
+      }
+    }
+  }, []);
 
   // Start loading model immediately on mount
   useEffect(() => {
@@ -80,7 +105,13 @@ function App() {
             <WelcomeScreen key="welcome" onVisitorIdentified={handleVisitorIdentified} />
           )}
           {visitor && !transitioning && (
-            <PersonalizedView key="personal" visitor={visitor} onReset={handleReset} llmStatus={llmStatus} />
+            <PersonalizedView
+              key="personal"
+              visitor={visitor}
+              onReset={handleReset}
+              llmStatus={llmStatus}
+              initialSpec={permalinkSpec}
+            />
           )}
         </AnimatePresence>
       </div>
