@@ -3,9 +3,12 @@ import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { Shimmer } from './_shared';
 
+// Limits intentionally generous — Qwen 1.5B emits long titles regularly.
+// Visual treatment in each hero variant uses clamp() / line-height so very
+// long copy still wraps acceptably.
 const heroBaseSchema = z.object({
-  title: z.string().min(1).max(160),
-  kicker: z.string().max(80).optional(),
+  title: z.string().min(1).max(320),
+  kicker: z.string().max(200).optional(),
 });
 
 // hero

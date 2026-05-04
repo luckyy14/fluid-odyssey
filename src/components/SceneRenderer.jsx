@@ -55,12 +55,25 @@ export default function SceneRenderer({ spec, iterator, question }) {
           if (evt.type === 'shell')                   setShell({ layout: evt.layout, blocks: evt.blocks });
           if (evt.type === 'block_filled') {
             setFilled((f) => ({ ...f, [evt.id]: evt.props }));
-            // Defensive: if the shell scaffold missed this block id, append it
-            // so the renderer actually mounts a slot for it.
+            // Reconcile shell.blocks with the authoritative type from this event.
+            // The streaming parser may have committed a truncated type into the
+            // shell (e.g. "exp" instead of "exp_role_card_stack") if it fired
+            // before the type string finished. The block_filled event carries
+            // the fully-parsed type, so prefer it.
             setShell((s) => {
               if (!s) return s;
-              if (s.blocks.some((b) => b.id === evt.id)) return s;
-              return { ...s, blocks: [...s.blocks, { id: evt.id, type: evt.blockType || 'markdown_prose', props_preview: {} }] };
+              const idx = s.blocks.findIndex((b) => b.id === evt.id);
+              if (idx === -1) {
+                return { ...s, blocks: [...s.blocks, { id: evt.id, type: evt.blockType || 'markdown_prose', props_preview: {} }] };
+              }
+              const existing = s.blocks[idx];
+              if (evt.blockType && evt.blockType !== existing.type) {
+                const updated = [...s.blocks];
+                updated[idx] = { ...existing, type: evt.blockType };
+                devLog.debug('ui', `shell: reconciled block ${evt.id} type ${existing.type} → ${evt.blockType}`);
+                return { ...s, blocks: updated };
+              }
+              return s;
             });
           }
         }

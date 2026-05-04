@@ -74,7 +74,7 @@ const PROPS_EXAMPLES = {
   me_polaroid_intro:       '{ "name": "Lakshay Baheti", "role": "<ROLE>", "caption": "<ONE_LINE>" }',
 };
 
-const HERO_PROPS_EXAMPLE = '{ "title": "<headline answering the question>", "kicker": "<one-line subtitle>" }';
+const HERO_PROPS_EXAMPLE = '{ "title": "<6-12 word headline>", "kicker": "<5-10 word subtitle>" }';
 
 function composerPrompt(intent, exclusions) {
   const heros = HERO_VARIANTS.filter((h) => !exclusions.hero.has(h));
@@ -123,7 +123,7 @@ CRITICAL OUTPUT RULES:
 - Use double-quotes for ALL keys and string values.
 - "background" MUST be an object: { "kind": "<value>" }. NEVER a bare string.
 - BOTH blocks MUST be present and have non-empty "props". The hero "props" MUST contain at least "title".
-- The hero/block examples above show the SHAPE only — fill values from the FACT SHEET and the user's question, do NOT copy the placeholder text.
+- The hero/block examples above show the SHAPE only. Any string in <ANGLE_BRACKETS> is a placeholder you MUST replace with a real fact from the FACT SHEET or a string derived from the user's question. NEVER emit literal angle-bracket text in your output.
 - Do NOT include a "props_preview" key.`;
 }
 

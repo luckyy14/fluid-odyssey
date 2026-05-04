@@ -73,13 +73,15 @@ export function createPartialJsonParser() {
   }
 
   // Heuristic: scaffold is "stable" once BOTH expected blocks have shown up
-  // with id+type. Composer prompt always asks for hero + scenario, so we wait
-  // for length ≥ 2 before firing the shell — otherwise the renderer locks in
-  // a 1-block layout and the second block_filled has nowhere to land.
+  // with id+type AND a `props` key. The presence of `props` in the parsed
+  // object proves the model has moved past the type field, so the `type`
+  // string is fully closed (not a mid-emission truncation like `"exp"` for
+  // `"exp_role_card_stack"`). Without this, partial-json can return a
+  // truncated type that locks the renderer into the wrong component.
   function hasBlockScaffold() {
     if (shellFired) return false;
     if (!Array.isArray(lastObj?.blocks) || lastObj.blocks.length < 2) return false;
-    if (!lastObj.blocks.every((b) => b && b.id && b.type)) return false;
+    if (!lastObj.blocks.every((b) => b && b.id && b.type && 'props' in b)) return false;
     return true;
   }
 

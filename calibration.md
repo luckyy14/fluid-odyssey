@@ -196,3 +196,56 @@ Three secondary issues observed in the same raw buffer:
 - Timeline description should no longer render literal "…".
 
 **Verification next time.** Watch for: timeline event with a real description (not "…"); page renders identically to before this refactor (visual regression check).
+
+---
+
+## 2026-05-04 04:00 — Angle-bracket placeholders to break copy-verbatim
+**Problem.** Even after replacing `"…"` with realistic-sounding example text ("Led FE migration of clinic ops portal, cut latency 90%."), the model still copied the example verbatim into the rendered output. Realistic strings are exactly the kind of thing a 1.5B model treats as canonical "fill this in" content.
+
+**Change.**
+- `PROPS_EXAMPLES` in `sceneOrchestrator.js`: every model-generated string field now uses `<ANGLE_BRACKET_TAGS>` (e.g. `"description": "<ONE_SENTENCE_IMPACT>"`, `"title": "<JOB_TITLE>"`). Stable real values (URLs, fixed identifiers like `"Lakshay Baheti"`) stay literal — those are facts the model should always emit verbatim.
+- New CRITICAL rule: `Any string in <ANGLE_BRACKETS> is a placeholder you MUST replace with a real fact from the FACT SHEET or a string derived from the user's question. NEVER emit literal angle-bracket text in your output.`
+
+**Files.** `src/lib/sceneOrchestrator.js`.
+
+**Expected.** Angle brackets are visually obviously meta — model should infer the shape but not paste them. If a field comes through with `<...>` in the rendered output, the prompt rule needs more weight (e.g., another worked example showing transformation).
+
+**Verification next time.** Run a question and look at rendered text. Watch for: no `<ANGLE_BRACKET>` strings on the page; no copy of the literal example sentences. Also note: latest log showed model swapping hero and scenario roles (placed `exp_role_card_stack` at `id: 'h'` and `hero_quote` at `id: 'b'`). May need a follow-up entry to make the id→role binding more explicit (e.g., literal `"id": "hero"` and `"id": "scenario"` instead of `"h"`/`"b"`).
+
+---
+
+## 2026-05-04 04:30 — Multi-persona test cycle: shell-type truncation + theme flash + hero-length fixes
+**Problem.** User reported (a) layout flashes 2× before content arrives, (b) only the hero block renders despite logs showing both `block_filled` events fire. Connected chrome-devtools MCP, drove 5 question cycles from different personas (recruiter, CTO, journalist, junior dev, tech enthusiast), inspected DOM + console for each.
+
+**Root causes found.**
+
+1. **Shell scaffold locks in a TRUNCATED block type.** `streamingParser.hasBlockScaffold()` fired as soon as both blocks had `id` and `type` fields. But `partial-json` returns mid-emission strings as truncated values: while the model is writing `"type": "exp_role_card_stack"`, the parser sees `type: "exp"`. The shell event committed `type: "exp"` to React state, `getBlock("exp")` returned the `markdown_prose` fallback (registry default), and when `block_filled` later arrived with the real props (`{events: [...]}`), they were passed to `MarkdownProse` which only knows `text` — so it rendered an empty `<p>`. Looked like "second block missing" but was actually "second block rendered as the wrong component." Caught by adding a temporary `render block ${id}:${type}` log inside the renderer's blocks.map loop — caught `b:exp` instead of `b:exp_role_card_stack`.
+
+2. **Theme flash.** `index.css` had a `.theme-transition` rule trapped INSIDE a `@keyframes water-wave` block (CSS syntax error — the rule was never applied). When `theme_hint` and `theme_ready` set different CSS vars on `:root`, every var-driven element snapped to the new value with no transition.
+
+3. **Hero schema too tight.** `heroBaseSchema` required `title` ≤ 160 chars; Qwen 1.5B regularly emits 200–280 char titles for prose-heavy questions ("Tell me about Lakshay as a person…"). Schema rejected, fallback to `markdown_prose`, rendered text included the leaking `title:` JSON key prefix from `stringifyShallow`.
+
+**Change.**
+
+1. **`src/lib/streamingParser.js`** — `hasBlockScaffold()` now requires `'props' in b` for every block in addition to `id`/`type`. Once `"props":` appears in the buffer, the type field BEFORE it is fully closed, so `type` cannot be a mid-emission truncation. Removed the old regex-based "looks closed" tail check that was firing too early.
+
+2. **`src/components/SceneRenderer.jsx`** — added shell reconciliation: when a `block_filled` event arrives with `evt.blockType` that differs from the existing `shell.blocks[idx].type`, update the shell. Belt-and-suspenders against future parser misfires. Logs `shell: reconciled block X type Y → Z` when it kicks in.
+
+3. **`src/index.css`** — pulled `.theme-transition` out of the `@keyframes` block (where it was dead code). Replaced with a global selector `*, *::before, *::after { transition: background-color 0.45s, color 0.45s, border-color 0.45s, box-shadow 0.45s, fill 0.45s, stroke 0.45s; }` plus an opt-out for `[class*="animate-"]` and `[style*="animation"]` so framer-motion transforms and shimmer keyframes aren't stomped.
+
+4. **`src/components/blocks/heros.jsx`** — `heroBaseSchema`: `title` max 160 → 320, `kicker` max 80 → 200. Comment explains: Qwen 1.5B emits long copy regularly; `clamp()` font sizing in each variant handles overflow gracefully.
+
+5. **`src/lib/sceneOrchestrator.js`** — `HERO_PROPS_EXAMPLE` placeholder updated to `<6-12 word headline>` / `<5-10 word subtitle>` to nudge the model toward shorter copy.
+
+**Verification.** Ran 5 multi-persona cycles after the fix (recruiter, CTO, journalist, junior, tech enthusiast). Result:
+- Cycle 1–2 (pre-fix): both showed empty markdown_prose for block `b`. Caught the bug.
+- Cycle 3 (post truncation fix, pre hero-length fix): both blocks rendered, hero fell back to markdown_prose for long title.
+- Cycle 4–5 (post all fixes): both blocks render with content, no console warns, schemas validate cleanly. Confirmed reliable.
+
+**Files.** `src/lib/streamingParser.js`, `src/components/SceneRenderer.jsx`, `src/index.css`, `src/components/blocks/heros.jsx`, `src/lib/sceneOrchestrator.js`.
+
+**Open issues observed during testing (not yet fixed).**
+- **Pass 2 throughput is 17–23 ch/s on Qwen 1.5B-q4f16 + WebGPU/D3D11.** Total cycle time 80–95s. Worth profiling but normal for this model size; biggest user-facing latency lever now.
+- **Pass 1 monoculture.** Model nearly always picks `palette_name: ember`/`ink` and `bg_kind: particles`/`pattern`. Theme variety is low. Could surface as an explicit "use a palette you have NOT used recently" prompt rule, but recencyRing already does this at the algorithmic level — the model just isn't honoring the exclusion set well.
+- **Polarity flip on stats.** Model sometimes emits `-59.9%` for "faster deployments" (should be positive `60%`). A prompt rule about sign might help.
+- **`stringifyShallow` leaks JSON keys.** When schema validation fails, fallback rendering shows `"title: <text>"` because the function prefixes each key. Could render values-only when there's a single key, or strip well-known keys.
