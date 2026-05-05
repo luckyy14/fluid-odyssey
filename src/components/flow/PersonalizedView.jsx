@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Loader2, Send } from 'lucide-react';
+import StreamingStatus from '../StreamingStatus';
 import { FaLinkedin, FaGithub, FaEnvelope } from 'react-icons/fa';
 import SceneRenderer from '../SceneRenderer';
 import SideRail from './SideRail';
@@ -113,7 +114,7 @@ const PersonalizedView = ({ visitor, onReset, llmStatus = LLM_STATUS.IDLE, initi
       />
       <MobileNav onReset={onReset} llmStatus={llmStatus} />
 
-      <div className="lg:pl-24">
+      <div className="lg:pl-32">
         <div className="max-w-2xl mx-auto px-5 pt-24 lg:pt-10 pb-10 lg:max-w-4xl lg:px-12 flex flex-col gap-8">
           {/* Header */}
           <motion.header
@@ -168,10 +169,11 @@ const PersonalizedView = ({ visitor, onReset, llmStatus = LLM_STATUS.IDLE, initi
             question={lastQuestion}
           />
 
-          {busy && (
-            <div className="flex items-center gap-2 text-xs text-[var(--fg-muted)]">
-              <Loader2 size={12} className="animate-spin" /> Composing your page…
-            </div>
+          {/* While the model is warming up (downloading + shader compile),
+              show a status pill near the input so the long wait has signal.
+              Once a question is in-flight, SceneRenderer owns the status. */}
+          {!busy && llmStatus === LLM_STATUS.LOADING && (
+            <StreamingStatus phase="warming" />
           )}
 
           {/* Free-text input — live generation when LLM is READY. */}

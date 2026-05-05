@@ -1,0 +1,5 @@
+# LoRA artifacts and merged-bundle outputs are large + machine-generated.
+# Keep README.md tracked, ignore the binaries.
+*
+!.gitignore
+!README.md

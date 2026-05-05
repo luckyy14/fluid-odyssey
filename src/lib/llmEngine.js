@@ -80,7 +80,13 @@ export async function initEngine() {
             overrides: { context_window_size: 2048 },
           }],
         };
-        devLog.debug('llm', 'using custom LoRA bundle', { url: PERSONAL_MODEL_URL });
+        devLog.info('llm', 'custom LoRA bundle config', {
+          model: PERSONAL_MODEL_URL,
+          model_lib: PERSONAL_MODEL_LIB,
+          model_id: PERSONAL_MODEL_ID,
+        });
+      } else {
+        devLog.warn('llm', 'NO custom bundle env vars set; falling back', { hasUrl: !!PERSONAL_MODEL_URL, hasLib: !!PERSONAL_MODEL_LIB });
       }
       engine = await CreateWebWorkerMLCEngine(worker, ACTIVE_MODEL_ID, opts);
       initFailures = 0;

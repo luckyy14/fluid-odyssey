@@ -24,3 +24,13 @@ dist-ssr
 *.sw?
 
 .vercel
+.env.local
+
+# LoRA artifacts and compiled MLC bundles are large + machine-generated.
+# The models/ dir keeps a README explaining what should land here.
+models/loras/
+models/merged/
+models/compiled/
+public/models/*-q4f16_1/
+public/models/*-q4f32_1/
+trace.json

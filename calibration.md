@@ -249,3 +249,165 @@ Three secondary issues observed in the same raw buffer:
 - **Pass 1 monoculture.** Model nearly always picks `palette_name: ember`/`ink` and `bg_kind: particles`/`pattern`. Theme variety is low. Could surface as an explicit "use a palette you have NOT used recently" prompt rule, but recencyRing already does this at the algorithmic level — the model just isn't honoring the exclusion set well.
 - **Polarity flip on stats.** Model sometimes emits `-59.9%` for "faster deployments" (should be positive `60%`). A prompt rule about sign might help.
 - **`stringifyShallow` leaks JSON keys.** When schema validation fails, fallback rendering shows `"title: <text>"` because the function prefixes each key. Could render values-only when there's a single key, or strip well-known keys.
+
+---
+
+## 2026-05-04 04:45 — Optimistic-UI streaming status with phase-mapped vocabulary
+**Problem.** End-to-end cycle is 80–95s on Qwen 1.5B. Only feedback during that wait was a tiny `<Loader2 spin/>` + the static text "Composing your page…" Users don't know if anything's actually happening, especially during the silent 10–20s pass-1 router call.
+
+**Change.**
+1. **`src/lib/statusVocabulary.js`** (new) — exports `STATUS_VOCAB`, a map of phase → string array. ~70 phrases across 9 phases:
+   - `warming` (engine init/download): "Warming up the model", "Loading the local AI", "Spinning up WebGPU", "Heating the GPU", "Stretching the neurons", …
+   - `routing` (pass 1 awaiting): "Pondering", "Mulling it over", "Cogitating", "Picking an angle", "Routing the request", "Triangulating", …
+   - `theming`: "Sketching a palette", "Mixing colors", "Painting the canvas", …
+   - `composing` (pass 2 pre-first-chunk): "Composing", "Drafting", "Sketching", "Outlining", …
+   - `streaming` (pass 2 chunks arriving): "Streaming words", "Weaving sentences", "Threading the answer", "Stitching together", "Pouring the content", "Brewing", "Forging", …
+   - `shaping` (shell + first block_filled): "Laying out blocks", "Placing the hero", "Arranging sections", …
+   - `finishing` (both blocks filled, waiting for done): "Final touches", "Tying the bow", "Polishing", "Almost there", …
+   - `ready`: "Ready", "Hot off the press", "Fresh from the kiln", …
+   - `starting`: "Reading your question", "Listening", "Tuning in", …
+   - `pickStatus(phase, exclude)` helper picks a non-repeating word from the pool.
+
+2. **`src/components/StreamingStatus.jsx`** (new) — small pill component. Subscribes to a `phase` prop; rotates the displayed word every 1.8s within the phase pool using framer-motion fade. Includes a pulsing dot and animated three-dot ellipsis. `aria-live="polite"` for screen readers. Auto-rerolls when phase changes (so the user sees an immediate word change at each phase transition, not just at the next 1.8s tick).
+
+3. **`src/components/SceneRenderer.jsx`** — added `phase` state. Live-iterator effect now drives phase transitions:
+   - `iterator attached` → `routing`
+   - `theme_hint` → `composing`
+   - `theme_ready` → upgrade `composing` → `streaming` (only if still composing — preserves later phases)
+   - `shell` → `shaping`
+   - `block_filled` → `shaping` (first) / `finishing` (second+)
+   - `done` → `ready` for 1.2s flash, then `null` (pill disappears)
+   - Pill renders above the AnimatePresence block when `phase` is set.
+
+4. **`src/components/flow/PersonalizedView.jsx`** — replaced the static "Composing your page…" busy line with a `<StreamingStatus phase="warming" />` shown only during `LLM_STATUS.LOADING` (engine warmup). During in-flight question generation, SceneRenderer owns the status.
+
+**Files.** `src/lib/statusVocabulary.js` (new), `src/components/StreamingStatus.jsx` (new), `src/components/SceneRenderer.jsx`, `src/components/flow/PersonalizedView.jsx`.
+
+**Expected.** The 80–95s wait now has continuous, varied feedback: a fresh word every 1.8s, phase transitions visibly tied to what the orchestrator is actually doing. No more 10s of empty silence during pass 1. Engine warmup also gets a status pill on first load instead of a generic spinner. Pill quietly disappears 1.2s after `done`.
+
+**Verification next time.** Submit a question and watch: the pill should cycle through routing → composing → streaming → shaping → finishing → ready as the events fire, with words changing every ~2s within each phase.
+
+---
+
+## 2026-05-04 05:00 — Sidebar declutter + scene layout strategies + block frame variants
+**Problem.** Two visual issues: (1) the desktop left rail was overstuffed in a 96px column — `restart` caption + `L`/`Lakshay` caption + `AI` label + vertical `© 2025` text + 8 nav labels with truncation (`Architectu…`); content was overflowing the column and labels wrapped awkwardly. (2) Every scene rendered as the same flat vertical stack of `BlockShell` cards with identical padding/radius/bg — content was dynamic but the *look* was uniform and boxy across all 8 intents.
+
+**Change.**
+
+A) **`src/components/flow/SideRail.jsx` rewrite.** Width 96px → 128px (`w-24` → `w-32`). Dropped: `restart` caption under reset icon, `L`/`Lakshay` caption under avatar, separate "AI" sparkle block, vertical `© 2025` text. AI status moved to a small dot riding the avatar's bottom-right corner (green when ready, pulsing primary when loading). Section nav now uses a horizontal pill row (dot + label) instead of stacked dot-above-label, scrolls internally if viewport is short (`overflow-y-auto scrollbar-hide`), no truncation needed — all 8 labels including "Architecture" fit. Footer condensed to one row of social icons + theme toggle. Dividers added between header / nav / footer for breathing room. Main content offset bumped `lg:pl-24` → `lg:pl-32` in `PersonalizedView.jsx` to match.
+
+B) **`src/lib/sceneLayouts.js` (new)** — strategy and frame selection logic. 5 layout strategies (`editorial`, `split`, `bleed`, `mosaic`, `stack`) and 6 frame variants (`clean`, `numbered`, `ruled`, `markered`, `tinted`, `cutout`). `pickLayoutStrategy(seed, intent)` chooses a strategy with intent-bias maps (philosophy → editorial, outcomes → mosaic, technical → split, etc). `pickFrameVariant(seed, index, isHero)` chooses per-block frame, with hero-specific pool kept simpler. Deterministic from seed — same permalink always renders the same look.
+
+C) **`src/components/SceneLayout.jsx` (new)** — `<SceneLayout strategy>` outer container with one of 5 visual treatments:
+   - `editorial`: 38rem max-width centered column, generous 36px vertical gap (magazine).
+   - `split`: 2-column CSS Grid (1.4fr / 1fr), collapses to single column under 768px.
+   - `bleed`: vertical stack with alternating odd children breaking out of the column via negative margins (-1.25rem mobile, -2.5rem desktop).
+   - `mosaic`: vertical stack with varied widths per child (92%/86%/78%) and alternating left/right alignment.
+   - `stack`: original flat vertical, kept as fallback.
+   And `<BlockFrame variant>` per-block decorator: numbered (oversized `01`/`02` counter floating left), ruled (small accent-color rule on top), markered (left accent border), tinted (gradient pad), cutout (asymmetric corner radii), clean (no chrome).
+
+D) **`src/index.css`** — added bleed/mosaic/split CSS classes with the asymmetric child rules plus mobile-collapse for split.
+
+E) **`src/components/SceneRenderer.jsx`** — replaced the flat `flex column gap:20` map with `<SceneLayout strategy>{ blocks.map(b => <BlockFrame variant={..}>{content}</BlockFrame>) }`. `chooseSceneLook({seed, intent, blocks})` picks both at once; results are memoizable via the deterministic seed.
+
+**Files.** `src/components/flow/SideRail.jsx` (rewrite), `src/components/flow/PersonalizedView.jsx` (one-line padding bump), `src/lib/sceneLayouts.js` (new), `src/components/SceneLayout.jsx` (new), `src/index.css` (added strategy classes), `src/components/SceneRenderer.jsx` (wire new layout system).
+
+**Verification.** Drove chrome MCP through all 8 intent chips back-to-back. Each picked a distinct strategy that matched its INTENT_BIAS map and stayed stable across re-clicks (same intent = same strategy). 5 of 5 strategies (`editorial`, `bleed`, `stack`, `mosaic`, `split`) appeared in active use across the 8 prebaked intents. Sidebar audit: 0 overflowing children at w-32, all 8 labels render full text, no `…` truncation.
+
+**Expected runtime feel.** A philosophy answer reads like a magazine column. A projects answer feels mosaic, hand-arranged. An outcomes answer splits into a 2-column comparison. Same JSON spec; pure visual variety. Combined with the per-block frames (oversized numerals, accent rules, asymmetric corners), no two answers look alike even though they share a small set of components.
+
+**Open follow-ups.**
+- The per-block `BlockShell` (still applied INSIDE each block component) is a uniform card — it now sits inside the `BlockFrame`, which is fine but creates a "card-in-frame" effect for `tinted` and `cutout` variants. A future pass could let blocks opt out of `BlockShell` when wrapped in a frame that already provides the surface treatment.
+- `mosaic` widths are hardcoded to 2-block scenes (works today since spec is always hero+scenario). Recursive specs (`future_plan.md`) would need a generalized rule.
+
+---
+
+## 2026-05-04 05:15 — Layout & frame catalog expansion (+research doc)
+**Problem.** Initial layout system (entry 14) shipped 5 strategies + 6 frames. Variety was a step up but variants stayed within the same "rounded box" idiom — the Apple Bento, Brutalist, Polaroid, Sticky-Note, Newspaper, and Terminal-Window patterns from common design systems weren't represented. User asked for a research-grounded expansion.
+
+**Change.**
+
+A) **`src/lib/sceneLayouts.js`** — extended the catalogs:
+- `LAYOUT_STRATEGIES` 5 → **9** (added `bento`, `polaroid_scatter`, `brutalist`, `newspaper`)
+- `FRAME_VARIANTS` 6 → **10** (added `polaroid`, `sticky_note`, `terminal_window`, `brutalist_box`)
+- `INTENT_BIAS` rebalanced to weight new strategies into appropriate intents (e.g., `outcomes → bento × 2`, `personal → polaroid_scatter`, `philosophy → newspaper`, `technical → brutalist`)
+- Hero pool got `terminal_window` (works well for hero_terminal blocks); scenario pool absorbed all four new frames
+
+B) **`src/components/SceneLayout.jsx`** — added the 4 new strategy containers (each picks a recognizable layout idiom: bento = 6-col CSS Grid with hero spanning all 6; polaroid_scatter = 36px gap with rotation; brutalist = 28px gap pairing with hard borders; newspaper = 46rem max-width column for serif drop-cap treatment) and 4 new frame variants:
+   - `polaroid`: white photo-frame (#fafaf7) + 14/14/36 padding + alternating ±1–3° rotation + drop shadow + hover-to-flat. Fixed colors so the album feel doesn't break in dark themes.
+   - `sticky_note`: pastel `--accent-soft` bg + 1.5° rotation + folded-corner triangle via `clip-path`.
+   - `terminal_window`: macOS-style title bar with red/yellow/green traffic-light dots above the block, bordered with `--outline`.
+   - `brutalist_box`: 2px `--fg` border + 6px solid offset shadow + zero border-radius. Anti-Material.
+
+C) **`src/index.css`** — strategy CSS for the 4 new containers:
+   - `.scene-bento > :nth-child(N)` rules to assign grid spans (`span 6` / `span 4` / `span 2`) with mobile fallback to full-width.
+   - `.scene-polaroid-scatter > :nth-child(odd|even)` — alternating left/right offsets so rotated children scatter visually.
+   - `.scene-brutalist` — small block padding to let offset shadows breathe.
+   - `.scene-newspaper` — serif heading override + `column-count: 2` on the second block + drop-cap `:first-letter` selector with 3em accent-color glyph.
+
+D) **`layout_catalog.md` (new, ~250 lines)** — research-grounded reference doc:
+- Table of all 9 strategies and 10 frames with their design-system inspiration (Medium, Linear, Stripe, Apple Bento, Awwwards, NYT print, Pinterest, Brutalist Web Design, macOS Terminal, Post-it).
+- Backlog of 10 strategies and 15 frames worth adding next, each with inspiration source (XCKD comic strips, Spotify album covers, NYC subway maps, Genius highlights, ticket stubs, footnote markers, glassmorphism, vinyl crops, etc).
+- Intent → strategy bias map documented.
+- Implementation notes (determinism via Knuth multiplicative hash, hero vs scenario pools, theme-awareness rules, `nth-child` CSS hooks).
+- "How to add a new variant" 8-step recipe.
+- Research sources tapped (CodePen tags, Awwwards, Apple HIG, GOV.UK, Tufte CSS, Brutalist Web Design, Tailwind UI Catalyst).
+
+**Files.** `src/lib/sceneLayouts.js`, `src/components/SceneLayout.jsx`, `src/index.css`, `layout_catalog.md` (new).
+
+**Verification.** Drove chrome MCP through all 8 intent chips, captured strategy per chip. Result: 6 distinct strategies in active use (`editorial`, `mosaic`, `split`, `brutalist`, `bleed`, `polaroid-scatter`) — both new ones (`brutalist` for Architecture, `polaroid-scatter` for About me) appear. Same intent → same strategy on re-click (deterministic, permalink-stable). `bento` and `newspaper` will surface for other seeds; the prebaked 8 happen not to land on them at the chosen seeds, but they're reachable via question generation.
+
+**Open follow-ups.**
+- Backlog in `layout_catalog.md` has 10 strategies + 15 frames not yet implemented. Highest-impact picks for v2: `comic_strip`, `index_card_stack`, `manifesto`, `ticket`, `glass`, `stamp`.
+- Some frames don't compose cleanly with the inner `BlockShell` of every block (e.g. `polaroid` inside a block that already paints a card surface produces a card-in-frame). Fix once we add a `noShell` prop to blocks.
+- `polaroid` uses fixed colors (`#fafaf7` bg + black text) so it doesn't blend into dark themes — design choice to preserve the album feel, but worth a `--polaroid-bg` token if user feedback wants it themeable.
+
+---
+
+## 2026-05-05 00:24 — Layout LoRA live in fluid-odyssey (Qwen 0.5B + custom WSL build)
+**Problem.** Two trained LoRAs (portfolio + layout) sat in `models/loras/` as raw safetensors, unusable by web-llm which needs MLC-compiled bundles. Goal: get the layout LoRA actually serving inference in the browser, no Docker, no per-request network calls.
+
+**Pipeline built (Windows + WSL2 hybrid).**
+
+1. `scripts/merge_loras.py` (Python on Windows) — peft `merge_and_unload` fuses each LoRA into Qwen2.5-0.5B-Instruct base → `models/merged/{portfolio,layout}/` (~954 MB each, full standalone safetensors).
+2. WSL2 Ubuntu 24.04: `pip install mlc-llm-nightly-cu124 mlc-ai-nightly-cu124` (~2 GB wheels) plus all `nvidia-*-cu12` runtime packages (the nightly bundles cu13 NVIDIA libs but TVM is built against cu12, so explicit `nvidia-cuda-runtime-cu12 nvidia-cublas-cu12 …` install needed; export LD_LIBRARY_PATH to point at the cu12 libs in the venv).
+3. `scripts/compile_mlc.sh` — runs `python -m mlc_llm convert_weight --device cpu --quantization q4f16_1` + `gen_config --conv-template qwen2` for each merged model. Note `--device cpu` (CUDA path needs `nvcc` which isn't in venv). Output: `models/compiled/{portfolio,layout}-q4f16_1/` (~281 MB each — 70% reduction via 4-bit quant).
+4. WASM lib step (`mlc_llm compile`) needs emscripten + the mlc-llm git repo's `web/dist/wasm/mlc_wasm_runtime.bc` — NOT shipped in pip wheel. Bypassed by reusing MLC's published `Qwen2-0.5B-Instruct-q4f16_1-ctx4k_cs1k-webgpu.wasm` from `binary-mlc-llm-libs` since the wasm lib is architecture-only (depends on Qwen 0.5B + q4f16, NOT on weights). Same lib works for both LoRAs.
+5. `public/models/{portfolio,layout}-q4f16_1/` — bundles staged for Vite to serve as static assets.
+
+**Bugs hit + patched along the way.**
+
+- **`config.json` missing.** `convert_weight` in newer mlc-llm doesn't write the HF model config. Manually patched `rope_theta` from nested `rope_parameters` (newer transformers format) to top-level (mlc expects old format).
+- **`vocab.json` and `merges.txt` missing.** Bundle assembly only included `tokenizer.json`. web-llm fetches the BPE pair too. Downloaded both from MLC's reference HF repo.
+- **`tensor-cache.json` vs `ndarray-cache.json`.** New mlc-llm names the manifest `tensor-cache.json`; web-llm looks for `ndarray-cache.json`. Symlinked (cp) one to the other; reference repo confirms they're byte-identical.
+- **HF URL convention.** web-llm's `cleanModelUrl()` appends `resolve/main/` to any model URL that doesn't already match `.+/resolve/.+/`. Our `http://localhost:5173/models/layout-q4f16_1/` became `…/resolve/main/mlc-chat-config.json` → 404 → SPA fallback HTML → JSON.parse "Unexpected token '<'". Fixed by mirroring the bundle into `public/models/<name>/resolve/main/<file>` so the appended path resolves.
+- **Vite SPA fallback hiding 404s.** Default Vite dev server returns `index.html` for every unknown path. Wrote a `noSpaFor(['/models/'])` plugin (in `vite.config.js`) that intercepts `res.writeHead`: if the response is going out as `text/html` for a `/models/*` URL, rewrite to `404 text/plain`. Kept SPA behavior for non-`/models/` paths so the React app still routes.
+- **IndexedDB cache poisoning.** Earlier failed inits cached the SPA fallback HTML as the model config. Cleared `indexedDB.databases()` + `caches.keys()` to wipe; subsequent reload pulled fresh files.
+- **Worker dtype mismatch (training side).** RTX 2070 Super (Turing, compute 7.5) has no native bf16. Training configs forced `torch_dtype: float16`, `bf16: false`, `fp16: false` (left mixed-precision off entirely; bnb 4-bit handles compute precision).
+
+**Files added/touched.**
+- `scripts/merge_loras.py` (new) — peft merge.
+- `scripts/compile_mlc.sh` (new) — WSL2 invocation of mlc-llm convert/gen_config.
+- `vite.config.js` — `noSpaFor` plugin so Vite returns real 404s for missing `/models/` files.
+- `public/models/{portfolio,layout}-q4f16_1/` and `…/resolve/main/` (gitignored).
+- `.env.local` — `VITE_PERSONAL_MODEL_URL=http://localhost:5173/models/layout-q4f16_1/` + matching `..._LIB`.
+
+**Verified end-to-end.**
+
+- Engine init: **5.96s** (vs 6.5s on Qwen 1.5B). 8 shards (266 MB) downloaded once into IndexedDB; subsequent loads come from cache, zero network.
+- Pass 1 (router): **2.5s** (vs 10–25s on base Qwen 1.5B). **4–10× faster.**
+- Pass 2 throughput: **52 ch/s sustained** (vs 17–23 ch/s on base). **2.5–3× faster.**
+- Total cycle: **~17s** end-to-end (vs 80–95s previously). **~5× faster.**
+- LoRA-fused output recognizably follows our SceneSpec contract: emits the correct top-level keys (`request_id`, `seed`, `intent`, `mood`, `theme`, `layout`, `blocks`), fills both blocks with `id: "h"` and `id: "b"`, picks valid hero variants and scenario block types.
+
+**Quality caveats (model trained on 104 rows; expected).**
+- Occasional invalid enum values (e.g. `palette_name: "citrine"` instead of `citrus`).
+- Stray field leakage (e.g. `background.kind: "hero_typewriter"` — block type bled into bg).
+- Minor JSON malformation (unclosed `}` between blocks). Streaming parser's permissive mode catches some; schema validation falls back to `markdown_prose` for the rest.
+
+**Ship vs improve trade.** The pipeline is correct and proves the approach. Output quality is a function of training data scale (we trained on 8 seeds × 12 paraphrases = 96 effective rows). Per `layout_adapter_plan.md` §3.2, the target is 2,000–3,000 examples. To improve, run `generate_layout_data.py` with `ANTHROPIC_API_KEY` set and `--target-rows 2000`, then retrain.
+
+**Open follow-ups.**
+- Output quality: train on 2k synthetic rows for a real validation. Current LoRA is proof-of-pipeline only.
+- The portfolio LoRA is staged but unused at runtime (only one bundle URL active per `.env.local`). Decide whether to stack adapters (orthogonal target_modules; see `layout_adapter_plan.md` §9) or runtime-swap via `engine.reload()`.
+- Compile WASM lib locally (instead of borrowing MLC's prebuilt) when we change the model arch or quantization. Needs emscripten + mlc-llm git repo in WSL.

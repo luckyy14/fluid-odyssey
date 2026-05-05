@@ -317,6 +317,7 @@ export function themeGenerator(sel) {
   };
 
   return {
+    seed: sel.seed,   // top-level so SceneRenderer drives deterministic frame/layout picks
     input: {
       palette_name: sel.palette_name,
       type_family: sel.type_family,

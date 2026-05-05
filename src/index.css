@@ -126,3 +126,72 @@ body {
 }
 /* Don't smooth the shimmer keyframes or framer-motion transforms. */
 [class*="animate-"], [style*="animation"] { transition: none; }
+
+/* ───────── Scene layout strategies ───────── */
+
+/* "bleed" — alternating children break out of the column for visual rhythm.
+   Even-indexed children stay boxed; odd-indexed bleed by stretching margins. */
+.scene-bleed > :nth-child(odd) {
+  margin-inline: -1.25rem;
+}
+@media (min-width: 1024px) {
+  .scene-bleed > :nth-child(odd) {
+    margin-inline: -2.5rem;
+  }
+}
+
+/* "mosaic" — children take varied widths and offsets so the page reads
+   hand-arranged rather than uniformly stacked. */
+.scene-mosaic > :nth-child(1) { width: 92%; align-self: flex-start; }
+.scene-mosaic > :nth-child(2) { width: 86%; align-self: flex-end; }
+.scene-mosaic > :nth-child(3) { width: 78%; align-self: flex-start; margin-left: 8%; }
+.scene-mosaic > :nth-child(n+4) { width: 100%; }
+
+/* "split" — collapse to single column on narrow screens. */
+@media (max-width: 768px) {
+  .scene-split { grid-template-columns: 1fr !important; }
+}
+
+/* "bento" — Apple iOS-style varied grid. Hero spans the full row, scenario
+   sits below at narrower span pulled left. Adjust patterns by index for
+   visual rhythm. */
+.scene-bento > :nth-child(1) { grid-column: span 6; }
+.scene-bento > :nth-child(2) { grid-column: span 4; }
+.scene-bento > :nth-child(3) { grid-column: span 2; }
+.scene-bento > :nth-child(n+4) { grid-column: span 6; }
+@media (max-width: 768px) {
+  .scene-bento > * { grid-column: span 6 !important; }
+}
+
+/* "polaroid_scatter" — slight horizontal offset alternates so rotated
+   children feel scattered, not lined up. */
+.scene-polaroid-scatter > :nth-child(odd)  { align-self: flex-start; margin-left: 4%; }
+.scene-polaroid-scatter > :nth-child(even) { align-self: flex-end;   margin-right: 4%; }
+
+/* "brutalist" — wider gutter so the offset shadows breathe. */
+.scene-brutalist { padding-block: 4px; }
+
+/* "newspaper" — drop cap on the first child + multi-column on the second
+   block when its prose is long enough. */
+.scene-newspaper > :first-child h1,
+.scene-newspaper > :first-child h2,
+.scene-newspaper > :first-child h3 {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-weight: 700;
+}
+@media (min-width: 768px) {
+  .scene-newspaper > :nth-child(2) p {
+    column-count: 2;
+    column-gap: 28px;
+  }
+  /* Drop cap effect on the second block's first paragraph. */
+  .scene-newspaper > :nth-child(2) p:first-of-type::first-letter {
+    font-size: 3em;
+    float: left;
+    line-height: 0.85;
+    margin: 4px 8px 0 0;
+    font-weight: 800;
+    color: var(--accent);
+    font-family: 'Georgia', serif;
+  }
+}

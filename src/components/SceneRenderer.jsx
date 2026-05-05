@@ -4,6 +4,9 @@ import { themeGenerator, applyTheme } from '../lib/themeGenerator';
 import { getBlock } from './blocks/registry';
 import HoldingShell, { ThemedHoldingShell } from './HoldingShell';
 import SceneBackground from './SceneBackground';
+import StreamingStatus from './StreamingStatus';
+import { SceneLayout, BlockFrame } from './SceneLayout';
+import { chooseSceneLook } from '../lib/sceneLayouts';
 import { devLog } from '../lib/devLog';
 
 /**
@@ -17,6 +20,7 @@ export default function SceneRenderer({ spec, iterator, question }) {
   const [theme, setTheme] = useState(null);
   const [shell, setShell] = useState(null);   // {layout, blocks: [{id, type, props_preview}]}
   const [filled, setFilled] = useState({});   // id → props
+  const [phase, setPhase] = useState(null);   // streaming-status phase key, or null when idle
 
   // Prebaked path: synthesize theme + render everything immediately.
   useEffect(() => {
@@ -43,17 +47,20 @@ export default function SceneRenderer({ spec, iterator, question }) {
   useEffect(() => {
     if (!iterator) return;
     let cancelled = false;
-    setTheme(null); setShell(null); setFilled({});
+    let filledCount = 0;
+    setTheme(null); setShell(null); setFilled({}); setPhase('routing');
     devLog.info('ui', 'SceneRenderer: live iterator attached');
     (async () => {
       try {
         for await (const evt of iterator) {
           if (cancelled) return;
           devLog.debug('ui', `SceneRenderer ← ${evt.type}`, evt.id || evt.layout || '');
-          if (evt.type === 'theme_hint' && evt.theme) { applyTheme(evt.theme); setTheme(evt.theme); }
-          if (evt.type === 'theme_ready')             { applyTheme(evt.theme); setTheme(evt.theme); }
-          if (evt.type === 'shell')                   setShell({ layout: evt.layout, blocks: evt.blocks });
+          if (evt.type === 'theme_hint' && evt.theme) { applyTheme(evt.theme); setTheme(evt.theme); setPhase('composing'); }
+          if (evt.type === 'theme_ready')             { applyTheme(evt.theme); setTheme(evt.theme); setPhase((p) => p === 'composing' ? 'streaming' : p); }
+          if (evt.type === 'shell')                   { setShell({ layout: evt.layout, blocks: evt.blocks }); setPhase('shaping'); }
           if (evt.type === 'block_filled') {
+            filledCount += 1;
+            setPhase(filledCount >= 2 ? 'finishing' : 'shaping');
             setFilled((f) => ({ ...f, [evt.id]: evt.props }));
             // Reconcile shell.blocks with the authoritative type from this event.
             // The streaming parser may have committed a truncated type into the
@@ -76,6 +83,12 @@ export default function SceneRenderer({ spec, iterator, question }) {
               return s;
             });
           }
+          if (evt.type === 'done') {
+            setPhase('ready');
+            // Clear the status pill after a brief flash so the rendered scene
+            // gets the spotlight.
+            setTimeout(() => { if (!cancelled) setPhase(null); }, 1200);
+          }
         }
       } catch (err) {
         if (cancelled) return;
@@ -91,36 +104,50 @@ export default function SceneRenderer({ spec, iterator, question }) {
   }, [iterator]);
 
   const blocks = shell?.blocks ?? [];
+  const sceneSeed = (spec?.seed ?? theme?.seed ?? 0) | 0;
+  const sceneIntent = spec?.intent || theme?.intent;
+  const { layoutStrategy, frames } = chooseSceneLook({ seed: sceneSeed, intent: sceneIntent, blocks });
+  const frameById = Object.fromEntries(frames.map((f) => [f.id, f]));
 
   return (
     <>
       <SceneBackground theme={theme} />
       <div style={{ position: 'relative', zIndex: 1, fontFamily: 'var(--font-family)' }}>
+        {phase && (
+          <div style={{ marginBottom: 14 }}>
+            <StreamingStatus phase={phase} />
+          </div>
+        )}
         <AnimatePresence mode="wait">
           {!theme && !shell && <Wrap key="pre"><HoldingShell question={question} /></Wrap>}
           {theme && !shell && <Wrap key="theme"><ThemedHoldingShell question={question} /></Wrap>}
           {shell && (
             <Wrap key="scene">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                {blocks.map((b) => {
+              <SceneLayout strategy={layoutStrategy}>
+                {blocks.map((b, i) => {
                   const entry = getBlock(b.type);
                   const Component = entry.Component;
                   const Skeleton = entry.Skeleton;
                   const props = filled[b.id];
+                  const frame = frameById[b.id] || { variant: 'clean', isHero: false };
+                  let content;
                   if (props) {
                     if (props.fallback === 'markdown_prose') {
                       const Fallback = getBlock('markdown_prose').Component;
-                      return <Fallback key={b.id} text={props.text} />;
+                      content = <Fallback text={props.text} />;
+                    } else {
+                      content = <Component {...props} />;
                     }
-                    return (
-                      <motion.div key={b.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-                        <Component {...props} />
-                      </motion.div>
-                    );
+                  } else {
+                    content = <Skeleton {...(b.props_preview ?? {})} />;
                   }
-                  return <Skeleton key={b.id} {...(b.props_preview ?? {})} />;
+                  return (
+                    <BlockFrame key={b.id} variant={frame.variant} index={i} isHero={frame.isHero}>
+                      {content}
+                    </BlockFrame>
+                  );
                 })}
-              </div>
+              </SceneLayout>
             </Wrap>
           )}
         </AnimatePresence>

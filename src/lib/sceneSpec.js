@@ -57,6 +57,9 @@ export const Pass1Schema = z.object({
   intent: z.enum(INTENTS),
   mood: z.enum(MOODS),
   keywords: z.array(z.string().max(32)).min(1).max(7),
-  layout_seed: z.number().int(),
+  // layout_seed + theme_hint are legacy v1 fields; orchestrator v2 picks
+  // these locally via recencyRing + random seed. Optional so v1 router
+  // outputs still parse cleanly.
+  layout_seed: z.number().int().optional(),
   theme_hint: ThemeHintSchema.optional(),
 });
