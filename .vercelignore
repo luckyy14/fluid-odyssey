@@ -1,0 +1,25 @@
+# LoRA artifacts and compiled MLC bundles — local-dev only.
+# Production loads Qwen 2.5 1.5B Instruct from MLC's hosted CDN.
+models/
+public/models/
+
+# Build / runtime logs
+*.log
+
+# Trace data from chrome-devtools MCP runs
+trace.json
+
+# Trainer-side scripts not needed by the Vercel build
+scripts/compile_mlc.sh
+scripts/merge_loras.py
+scripts/generate_layout_data.py
+scripts/rebuild_lora_bundle.sh
+
+# Editor + OS
+.vscode/
+.idea/
+.DS_Store
+
+# Local env
+.env.local
+.env.*.local
